@@ -29,7 +29,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             <circle cx="16" cy="16" r="2.5" fill="var(--accent)" />
           </svg>
           <span className="font-semibold text-[var(--text)]" style={{ fontSize: '20px' }}>
-            SignalScope
+            Tapwire
           </span>
         </div>
 

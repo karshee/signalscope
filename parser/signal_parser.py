@@ -1,5 +1,5 @@
 """
-Signal parser for SignalScope — ported from signal-watcher/signal_parse.py.
+Signal parser for Tapwire — ported from signal-watcher/signal_parse.py.
 All regex patterns preserved from the original battle-tested implementation.
 """
 from __future__ import annotations

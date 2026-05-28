@@ -20,7 +20,7 @@ export function TopBar({ connected = false }: TopBarProps) {
 
   const title = Object.entries(routeTitles).find(([path]) =>
     location.pathname.startsWith(path)
-  )?.[1] || 'SignalScope'
+  )?.[1] || 'Tapwire'
 
   const initials = user?.name
     ? user.name

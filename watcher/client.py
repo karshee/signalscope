@@ -1,5 +1,5 @@
 """
-Telegram client for SignalScope — ported from signal-watcher/watcher.py.
+Telegram client for Tapwire — ported from signal-watcher/watcher.py.
 Handles connection, flood-wait, reconnection with exponential backoff.
 """
 import asyncio
@@ -13,7 +13,7 @@ from telethon.errors import FloodWaitError, SecurityError
 logger = logging.getLogger(__name__)
 
 
-class SignalScopeClient:
+class TapwireClient:
     def __init__(self, api_id: int, api_hash: str, session_string: str):
         self.api_id = api_id
         self.api_hash = api_hash

@@ -1,6 +1,7 @@
+import json
 import time
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -10,16 +11,20 @@ from backend.db.database import get_db
 
 router = APIRouter(prefix="/api/channels", tags=["channels"])
 
+_DEFAULT_WATCH_CONFIG = {"extractors": ["signal", "sentiment", "mention"]}
+
 
 class ChannelCreate(BaseModel):
     username: Optional[str] = None
     title: str
     telegram_id: Optional[int] = None
+    watch_config: Optional[dict[str, Any]] = None
 
 
 class ChannelUpdate(BaseModel):
     is_active: Optional[int] = None
     title: Optional[str] = None
+    watch_config: Optional[dict[str, Any]] = None
 
 
 @router.get("/")
@@ -53,11 +58,13 @@ async def add_channel(
     channel_id = str(uuid.uuid4())
     now = time.time()
 
+    watch_config_json = json.dumps(channel_in.watch_config or _DEFAULT_WATCH_CONFIG)
+
     async with get_db() as db:
         await db.execute(
             """
-            INSERT INTO channels (id, user_id, username, title, telegram_id, added_at, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO channels (id, user_id, username, title, telegram_id, added_at, is_active, watch_config)
+            VALUES (?, ?, ?, ?, ?, ?, 1, ?)
             """,
             (
                 channel_id,
@@ -66,11 +73,12 @@ async def add_channel(
                 channel_in.title,
                 channel_in.telegram_id,
                 now,
+                watch_config_json,
             ),
         )
         await db.commit()
 
-    return {"id": channel_id, "title": channel_in.title, "added_at": now}
+    return {"id": channel_id, "title": channel_in.title, "added_at": now, "watch_config": channel_in.watch_config or _DEFAULT_WATCH_CONFIG}
 
 
 @router.get("/{channel_id}")
@@ -112,6 +120,8 @@ async def update_channel(
             updates["is_active"] = channel_in.is_active
         if channel_in.title is not None:
             updates["title"] = channel_in.title
+        if channel_in.watch_config is not None:
+            updates["watch_config"] = json.dumps(channel_in.watch_config)
 
         if updates:
             set_clause = ", ".join(f"{k} = ?" for k in updates)

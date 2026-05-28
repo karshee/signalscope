@@ -1,4 +1,4 @@
-# SignalScope
+# Tapwire
 
 Telegram signal intelligence platform.
 

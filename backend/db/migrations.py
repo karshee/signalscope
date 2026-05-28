@@ -27,6 +27,7 @@ async def run_migrations():
                 is_active INTEGER DEFAULT 1,
                 avatar_url TEXT,
                 subscriber_count INTEGER,
+                watch_config TEXT DEFAULT '{"extractors": ["signal", "sentiment", "mention"]}',
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
@@ -103,4 +104,17 @@ async def run_migrations():
             )
         """)
 
+        await db.commit()
+
+        # Incremental migrations — safe to run on existing databases
+        await _add_column_if_missing(db, "channels", "watch_config",
+                                     "TEXT DEFAULT '{\"extractors\": [\"signal\", \"sentiment\", \"mention\"]}'")
+
+
+async def _add_column_if_missing(db, table: str, column: str, column_def: str):
+    """Add a column to an existing table if it does not already exist."""
+    async with db.execute(f"PRAGMA table_info({table})") as cursor:
+        cols = [row[1] for row in await cursor.fetchall()]
+    if column not in cols:
+        await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_def}")
         await db.commit()

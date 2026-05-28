@@ -1,64 +1,46 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight, Check, ArrowRight, TrendingUp, BarChart2, Shield } from 'lucide-react'
-import { clsx } from 'clsx'
+import { ChevronRight, Check, Shield, Search, Bell, Users, Zap, Code2, ArrowRight, ChevronDown } from 'lucide-react'
 
-// ── Signal data for hero preview ──────────────────────────────────────────────
+// ── Light theme design tokens ─────────────────────────────────────────────────
 
-const FAKE_SIGNALS = [
-  {
-    id: 1,
-    pair: 'XAUUSD',
-    dir: 'BUY',
-    entry: '2,341.50',
-    sl: '2,328.00',
-    tp1: '2,355.00',
-    status: 'active',
-    channel: 'GoldTrader Pro',
-    channelScore: 84,
-    channelTier: 'A',
-    time: '2m',
-  },
-  {
-    id: 2,
-    pair: 'GBPUSD',
-    dir: 'SELL',
-    entry: '1.2847',
-    sl: '1.2875',
-    tp1: '1.2810',
-    status: 'win',
-    channel: 'FX Signals Elite',
-    channelScore: 91,
-    channelTier: 'S',
-    time: '18m',
-  },
-  {
-    id: 3,
-    pair: 'EURUSD',
-    dir: 'BUY',
-    entry: '1.0821',
-    sl: '1.0798',
-    tp1: '1.0860',
-    status: 'loss',
-    channel: 'EuroFX Daily',
-    channelScore: 31,
-    channelTier: 'F',
-    time: '1h',
-  },
-]
-
-const STATUS_STYLE: Record<string, { color: string; label: string }> = {
-  active: { color: '#f59e0b', label: 'ACTIVE' },
-  win:    { color: '#22c55e', label: 'TP1 HIT' },
-  loss:   { color: '#ef4444', label: 'SL HIT' },
-  pending:{ color: '#6366f1', label: 'PENDING' },
+const L = {
+  bg:          '#ffffff',
+  surface:     '#f8fafc',
+  surface2:    '#f1f5f9',
+  border:      'rgba(0,0,0,0.08)',
+  text:        '#0f172a',
+  textMuted:   '#64748b',
+  textFaint:   '#94a3b8',
+  accent:      '#00c49a',
+  accentDim:   'rgba(0,196,154,0.10)',
+  accentBorder:'rgba(0,196,154,0.35)',
+  win:         '#16a34a',
+  loss:        '#dc2626',
+  mono:        "'JetBrains Mono', monospace",
+  // Terminal dark panel
+  term:        '#0d1117',
+  termBorder:  'rgba(255,255,255,0.08)',
 }
 
-const TIER_COLOR: Record<string, string> = {
-  S: '#00d4aa', A: '#22c55e', B: '#818cf8', C: '#f59e0b', D: '#f97316', F: '#ef4444',
-}
+// ── Keyframe styles injected once ─────────────────────────────────────────────
 
-// ── Nav ──────────────────────────────────────────────────────────────────────
+const GLOBAL_STYLES = `
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+  @keyframes termLine {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+`
+
+// ── Nav (light) ───────────────────────────────────────────────────────────────
 
 function Nav() {
   const [scrolled, setScrolled] = useState(false)
@@ -71,151 +53,169 @@ function Nav() {
   }, [])
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300"
-      style={{
-        background: scrolled ? 'rgba(10,10,11,0.92)' : 'transparent',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
-        backdropFilter: scrolled ? 'blur(12px)' : 'none',
-      }}
-    >
-      <div className="flex items-center gap-2.5">
-        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="13" stroke="#00d4aa" strokeWidth="1.5" />
-          <circle cx="16" cy="16" r="7" stroke="#00d4aa" strokeWidth="1" opacity="0.5" />
-          <line x1="2" y1="16" x2="8" y2="16" stroke="#00d4aa" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="24" y1="16" x2="30" y2="16" stroke="#00d4aa" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="16" y1="2" x2="16" y2="8" stroke="#00d4aa" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="16" y1="24" x2="16" y2="30" stroke="#00d4aa" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="16" cy="16" r="2.5" fill="#00d4aa" />
-        </svg>
-        <span className="font-semibold text-white" style={{ fontSize: '16px' }}>SignalScope</span>
-      </div>
-
-      <div className="hidden md:flex items-center gap-8">
-        {[
-          { label: 'How it works', href: '#how-it-works' },
-          { label: 'Pricing', href: '#pricing' },
-        ].map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            className="transition-colors"
-            style={{ fontSize: '14px', color: 'rgba(232,232,234,0.65)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,232,234,0.65)')}
-          >
-            {item.label}
-          </a>
-        ))}
-        <button
-          onClick={() => navigate('/login')}
-          className="transition-colors"
-          style={{ fontSize: '14px', color: 'rgba(232,232,234,0.65)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(232,232,234,0.65)')}
-        >
-          Login
-        </button>
-      </div>
-
-      <button
-        onClick={() => navigate('/register')}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
-        style={{ background: 'var(--accent)', color: '#0a0a0b', fontSize: '14px' }}
+    <>
+      <style>{GLOBAL_STYLES}</style>
+      <nav
+        style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0,
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          height: '60px',
+          background: scrolled ? 'rgba(255,255,255,0.92)' : '#ffffff',
+          borderBottom: `1px solid ${scrolled ? L.border : 'transparent'}`,
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          transition: 'all 0.25s ease',
+        }}
       >
-        Get Started <ChevronRight className="w-4 h-4" />
-      </button>
-    </nav>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="13" stroke={L.accent} strokeWidth="1.5" />
+            <circle cx="16" cy="16" r="7" stroke={L.accent} strokeWidth="1" opacity="0.5" />
+            <line x1="2" y1="16" x2="8" y2="16" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="24" y1="16" x2="30" y2="16" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="16" y1="2" x2="16" y2="8" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="16" y1="24" x2="16" y2="30" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="16" cy="16" r="2.5" fill={L.accent} />
+          </svg>
+          <span style={{ fontWeight: 600, fontSize: '16px', color: L.text }}>Tapwire</span>
+        </div>
+
+        {/* Links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          {[
+            { label: 'How it works', href: '#how-it-works' },
+            { label: 'Use Cases',    href: '#use-cases' },
+            { label: 'Pricing',      href: '#pricing' },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              style={{ fontSize: '14px', color: L.textMuted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = L.text)}
+              onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
+            >
+              {item.label}
+            </a>
+          ))}
+          <button
+            onClick={() => navigate('/login')}
+            style={{ fontSize: '14px', color: L.textMuted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = L.text)}
+            onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
+          >
+            Login
+          </button>
+        </div>
+
+        {/* CTA */}
+        <button
+          onClick={() => navigate('/register')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 18px',
+            borderRadius: '8px',
+            background: L.accent,
+            color: '#ffffff',
+            fontWeight: 600,
+            fontSize: '14px',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          Get Started <ChevronRight style={{ width: 15, height: 15 }} />
+        </button>
+      </nav>
+    </>
   )
 }
 
-// ── Fake signal card ──────────────────────────────────────────────────────────
+// ── Terminal hero widget ───────────────────────────────────────────────────────
 
-function FakeSignalCard({
-  signal,
-  delay,
-}: {
-  signal: (typeof FAKE_SIGNALS)[0]
-  delay: number
-}) {
-  const isBuy = signal.dir === 'BUY'
-  const st = STATUS_STYLE[signal.status]
-  const tierColor = TIER_COLOR[signal.channelTier]
+function TerminalWidget() {
+  const lines = [
+    { delay: 0,   content: <><span style={{ color: '#8b949e' }}>$ </span><span style={{ color: '#79c0ff' }}>pip install</span><span style={{ color: '#e6edf3' }}> tapwire</span></> },
+    { delay: 200, content: <span style={{ color: '#3fb950' }}>Successfully installed tapwire 0.4.1</span> },
+    { delay: 400, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 600, content: <><span style={{ color: '#8b949e' }}>$ </span><span style={{ color: '#79c0ff' }}>tapwire watch</span><span style={{ color: '#e6edf3' }}> @cryptonews \</span></> },
+    { delay: 700, content: <><span style={{ color: '#8b949e' }}>    </span><span style={{ color: '#ff7b72' }}>--keywords</span><span style={{ color: '#e6edf3' }}> &quot;bitcoin,eth,hack&quot; \</span></> },
+    { delay: 800, content: <><span style={{ color: '#8b949e' }}>    </span><span style={{ color: '#ff7b72' }}>--webhook</span><span style={{ color: '#e6edf3' }}> https://your-app.com/hook</span></> },
+    { delay: 1000, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 1100, content: <><span style={{ color: L.accent }}>Watching @cryptonews...</span><span style={{ color: '#8b949e' }}> (3 extractors active)</span></> },
+    { delay: 1300, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 1500, content: <><span style={{ color: '#8b949e' }}>[14:22] </span><span style={{ color: '#f0883e' }}>[KEYWORD]</span><span style={{ color: '#3fb950' }}> bitcoin_hit</span><span style={{ color: '#8b949e' }}> (conf: 100%)</span></> },
+    { delay: 1600, content: <><span style={{ color: '#8b949e' }}>  keyword: </span><span style={{ color: '#79c0ff' }}>bitcoin</span></> },
+    { delay: 1700, content: <><span style={{ color: '#8b949e' }}>  context: &quot;</span><span style={{ color: '#e6edf3' }}>Bitcoin breaks $70k resistance...</span><span style={{ color: '#8b949e' }}>&quot;</span></> },
+    { delay: 1900, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 2100, content: <><span style={{ color: '#8b949e' }}>[14:23] </span><span style={{ color: '#f0883e' }}>[SENTIMENT]</span><span style={{ color: '#3fb950' }}> bullish</span><span style={{ color: '#8b949e' }}> (conf: 87%)</span></> },
+    { delay: 2200, content: <><span style={{ color: '#8b949e' }}>  sentiment: </span><span style={{ color: '#3fb950' }}>bullish</span><span style={{ color: '#8b949e' }}>  bull_score: </span><span style={{ color: '#79c0ff' }}>4</span></> },
+    { delay: 2400, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 2600, content: <><span style={{ color: '#8b949e' }}>[14:24] </span><span style={{ color: '#f0883e' }}>[SIGNAL]</span><span style={{ color: '#3fb950' }}> trade_market</span><span style={{ color: '#8b949e' }}> (conf: 95%)</span></> },
+    { delay: 2700, content: <><span style={{ color: '#8b949e' }}>  pair: </span><span style={{ color: '#79c0ff' }}>XAUUSD</span><span style={{ color: '#8b949e' }}>  direction: </span><span style={{ color: '#3fb950' }}>buy</span></> },
+    { delay: 2800, content: <><span style={{ color: '#8b949e' }}>  entry: </span><span style={{ color: '#e6edf3' }}>2341.50</span><span style={{ color: '#8b949e' }}>  sl: </span><span style={{ color: '#f85149' }}>2328.00</span><span style={{ color: '#8b949e' }}>  tp1: </span><span style={{ color: '#3fb950' }}>2355.00</span></> },
+  ]
 
   return (
     <div
-      className="rounded-xl border p-3.5"
       style={{
-        background: 'var(--surface)',
-        borderColor: 'var(--border)',
-        animation: `slideInFromTop 500ms cubic-bezier(0.16,1,0.3,1) ${delay}ms both`,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        background: L.term,
+        borderRadius: '12px',
+        border: `1px solid ${L.termBorder}`,
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+        fontFamily: L.mono,
+        fontSize: '13px',
+        lineHeight: 1.7,
       }}
     >
-      {/* Channel row */}
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-1.5">
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{signal.channel}</span>
-          <span
-            className="px-1.5 py-0.5 rounded font-bold"
-            style={{
-              fontSize: '10px',
-              fontFamily: 'var(--font-mono)',
-              color: tierColor,
-              background: `${tierColor}18`,
-            }}
-          >
-            {signal.channelTier}
-          </span>
+      {/* Title bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 16px',
+          background: 'rgba(255,255,255,0.04)',
+          borderBottom: `1px solid ${L.termBorder}`,
+        }}
+      >
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
         </div>
-        <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
-          {signal.time}
-        </span>
+        <span style={{ fontSize: '11px', color: '#8b949e' }}>tapwire — zsh</span>
+        {/* Live dot */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div
+            style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: '#3fb950',
+              animation: 'pulseDot 1.5s ease-in-out infinite',
+            }}
+          />
+          <span style={{ fontSize: '10px', color: '#3fb950', fontWeight: 600 }}>LIVE</span>
+        </div>
       </div>
 
-      {/* Pair + direction */}
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-2">
-          <span style={{ fontSize: '17px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text)' }}>
-            {signal.pair}
-          </span>
-          <span
+      {/* Content */}
+      <div style={{ padding: '16px 18px' }}>
+        {lines.map((line, i) => (
+          <div
+            key={i}
             style={{
-              fontSize: '12px',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              color: isBuy ? 'var(--win)' : 'var(--loss)',
+              animation: `termLine 300ms ease both`,
+              animationDelay: `${line.delay}ms`,
             }}
           >
-            {isBuy ? '▲' : '▼'} {signal.dir}
-          </span>
-        </div>
-        <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded"
-          style={{
-            fontSize: '10px',
-            fontFamily: 'var(--font-mono)',
-            color: st.color,
-            background: `${st.color}18`,
-            border: `1px solid ${st.color}40`,
-          }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.color }} />
-          {st.label}
-        </span>
-      </div>
-
-      {/* Prices */}
-      <div className="grid grid-cols-3 gap-2" style={{ fontSize: '11px' }}>
-        {[
-          { l: 'Entry', v: signal.entry, c: 'var(--text)' },
-          { l: 'SL', v: signal.sl, c: 'var(--loss)' },
-          { l: 'TP1', v: signal.tp1, c: 'var(--win)' },
-        ].map(({ l, v, c }) => (
-          <div key={l}>
-            <div style={{ color: 'var(--text-faint)', marginBottom: 2, fontSize: '10px' }}>{l}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', color: c, fontWeight: 500 }}>{v}</div>
+            {line.content}
           </div>
         ))}
       </div>
@@ -230,569 +230,632 @@ function Hero() {
 
   return (
     <section
-      className="relative"
       style={{
-        background: 'var(--bg)',
-        backgroundImage: `
-          radial-gradient(ellipse 70% 50% at 60% 0%, rgba(0,212,170,0.07) 0%, transparent 55%),
-          repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 61px),
-          repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 61px)
-        `,
+        background: L.bg,
+        backgroundImage: 'radial-gradient(ellipse 70% 50% at 60% 0%, rgba(0,196,154,0.06) 0%, transparent 60%)',
+        paddingTop: '100px',
+        paddingBottom: '80px',
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 pt-28 pb-16 grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+      <div
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 24px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '48px',
+          alignItems: 'center',
+        }}
+      >
         {/* Left */}
-        <div className="pt-4">
-          {/* Pain hook */}
+        <div style={{ animation: 'slideUp 500ms ease both' }}>
+          {/* Eyebrow */}
           <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border mb-5"
             style={{
-              background: 'rgba(239,68,68,0.08)',
-              borderColor: 'rgba(239,68,68,0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              borderRadius: '999px',
+              background: L.accentDim,
+              border: `1px solid ${L.accentBorder}`,
               fontSize: '12px',
-              color: '#f87171',
+              fontWeight: 600,
+              color: L.accent,
+              marginBottom: '24px',
+              letterSpacing: '0.03em',
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-            The average Telegram signal channel wins less than 50% of trades
+            <span
+              style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: L.accent,
+                animation: 'pulseDot 1.5s ease-in-out infinite',
+              }}
+            />
+            Telegram Intelligence Platform
           </div>
 
           <h1
-            className="font-bold text-white leading-tight mb-5"
-            style={{ fontSize: 'clamp(36px, 3.8vw, 52px)', letterSpacing: '-0.025em', lineHeight: 1.1 }}
+            style={{
+              fontSize: 'clamp(38px, 4vw, 56px)',
+              fontWeight: 800,
+              color: L.text,
+              lineHeight: 1.08,
+              letterSpacing: '-0.03em',
+              marginBottom: '20px',
+            }}
           >
-            Finally know if your signal channels are actually{' '}
-            <span style={{ color: 'var(--accent)' }}>good.</span>
+            Watch any Telegram.{' '}
+            <span style={{ color: L.accent }}>Extract any signal.</span>
           </h1>
 
           <p
-            className="mb-8"
-            style={{ fontSize: '17px', color: 'rgba(232,232,234,0.6)', maxWidth: '480px', lineHeight: 1.65 }}
+            style={{
+              fontSize: '18px',
+              color: L.textMuted,
+              lineHeight: 1.65,
+              maxWidth: '480px',
+              marginBottom: '32px',
+            }}
           >
-            SignalScope watches every channel you follow and tracks every signal to its outcome — so you can see the real win rate, real R:R, and whether entries even get hit.
+            Monitor any channel or group. Get structured data — trading signals, keyword alerts,
+            sentiment scores, entity mentions — delivered in real-time to your app, webhook, or CLI.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-5">
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
             <button
               onClick={() => navigate('/register')}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-90 hover:scale-[1.02]"
               style={{
-                background: 'var(--accent)',
-                color: '#0a0a0b',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                background: L.accent,
+                color: '#ffffff',
+                fontWeight: 700,
                 fontSize: '15px',
-                boxShadow: '0 4px 24px rgba(0,212,170,0.35)',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: `0 4px 20px rgba(0,196,154,0.35)`,
+                transition: 'all 0.15s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
-              Start Free <ChevronRight className="w-4 h-4" />
+              Start Free <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
-            <button
-              onClick={() => navigate('/app/dashboard')}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
+            <a
+              href="#cli-section"
               style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '12px 24px',
+                borderRadius: '8px',
                 background: 'transparent',
-                color: 'rgba(232,232,234,0.75)',
+                color: L.textMuted,
+                fontWeight: 500,
                 fontSize: '15px',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: `1px solid ${L.border}`,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: 'all 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.18)'; e.currentTarget.style.color = L.text }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = L.border; e.currentTarget.style.color = L.textMuted }}
             >
-              View the app
-            </button>
+              View docs
+            </a>
           </div>
 
-          <p style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
-            Free forever · No credit card · Connect in 5 minutes
+          <p style={{ fontSize: '12px', color: L.textFaint, marginBottom: '24px', fontFamily: L.mono }}>
+            Free forever · No credit card · pip install tapwire
           </p>
 
           {/* Trust marks */}
-          <div className="flex flex-wrap items-center gap-5 mt-8 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
-            {[
-              { icon: '🔒', text: 'Read-only Telegram access' },
-              { icon: '📡', text: '35+ trading pairs' },
-              { icon: '⚡', text: 'Real-time outcomes' },
-            ].map((t) => (
-              <div key={t.text} className="flex items-center gap-1.5">
-                <span style={{ fontSize: '13px' }}>{t.icon}</span>
-                <span style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{t.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right — signal feed preview */}
-        <div className="flex flex-col gap-3 lg:pt-4">
-          {/* Mini header */}
           <div
-            className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border"
-            style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ animation: 'pulse 1.5s ease-in-out infinite' }} />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
-                LIVE SIGNAL FEED
-              </span>
-            </div>
-            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
-              3 channels
-            </span>
-          </div>
-
-          {FAKE_SIGNALS.map((s, i) => (
-            <FakeSignalCard key={s.id} signal={s} delay={100 + i * 200} />
-          ))}
-
-          {/* Channel score summary */}
-          <div
-            className="rounded-xl border p-3.5"
             style={{
-              background: 'var(--surface)',
-              borderColor: 'var(--border)',
-              animation: 'slideInFromTop 500ms cubic-bezier(0.16,1,0.3,1) 700ms both',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '20px',
+              paddingTop: '20px',
+              borderTop: `1px solid ${L.border}`,
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-faint)', letterSpacing: '0.06em' }}>
-                CHANNEL SCORES · 30D
-              </span>
-              <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>win rate / R:R</span>
-            </div>
             {[
-              { name: 'GoldTrader Pro', tier: 'A', win: '68%', rr: '2.1x' },
-              { name: 'FX Signals Elite', tier: 'S', win: '74%', rr: '2.8x' },
-              { name: 'EuroFX Daily', tier: 'F', win: '38%', rr: '0.6x' },
-            ].map((ch) => (
-              <div key={ch.name} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid var(--divider)' }}>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="font-bold px-1.5 py-0.5 rounded"
-                    style={{
-                      fontSize: '10px',
-                      fontFamily: 'var(--font-mono)',
-                      color: TIER_COLOR[ch.tier],
-                      background: `${TIER_COLOR[ch.tier]}18`,
-                      minWidth: '22px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {ch.tier}
-                  </span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{ch.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: parseFloat(ch.win) >= 50 ? 'var(--win)' : 'var(--loss)' }}>
-                    {ch.win}
-                  </span>
-                  <span style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                    {ch.rr}
-                  </span>
-                </div>
+              { icon: '🔒', text: 'Read-only access' },
+              { icon: '📡', text: '35+ pairs' },
+              { icon: '⚡', text: 'Real-time' },
+              { icon: '🔗', text: 'REST API + Webhooks' },
+            ].map((t) => (
+              <div key={t.text} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '14px' }}>{t.icon}</span>
+                <span style={{ fontSize: '12px', color: L.textFaint }}>{t.text}</span>
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Right — terminal */}
+        <div style={{ animation: 'slideUp 500ms ease 150ms both' }}>
+          <TerminalWidget />
         </div>
       </div>
     </section>
   )
 }
 
-// ── Stats bar ─────────────────────────────────────────────────────────────────
+// ── Use Cases ─────────────────────────────────────────────────────────────────
 
-function StatsBar() {
-  const stats = [
-    { value: '12,400+', label: 'signals tracked', icon: '⚡' },
-    { value: '847',     label: 'channels analysed', icon: '📡' },
-    { value: '£2.1M',   label: 'in verified signal value', icon: '📊' },
-  ]
+const USE_CASES = [
+  {
+    icon: '📈',
+    title: 'Trading Signal Tracking',
+    desc: 'Parse entry/SL/TP from any signal channel. Track win rates and R:R automatically.',
+    lucide: <Zap style={{ width: 18, height: 18 }} />,
+  },
+  {
+    icon: '🔍',
+    title: 'Brand & Competitor Monitoring',
+    desc: 'Get alerted when your brand, product, or competitors are mentioned in any group.',
+    lucide: <Search style={{ width: 18, height: 18 }} />,
+  },
+  {
+    icon: '🔐',
+    title: 'OSINT & Threat Intelligence',
+    desc: 'Monitor public groups for keywords related to threats, fraud, or specific entities.',
+    lucide: <Shield style={{ width: 18, height: 18 }} />,
+  },
+  {
+    icon: '💬',
+    title: 'Community Health',
+    desc: 'Score engagement, detect bot activity, track sentiment across your own groups.',
+    lucide: <Users style={{ width: 18, height: 18 }} />,
+  },
+  {
+    icon: '🚨',
+    title: 'Real-time Keyword Alerts',
+    desc: 'Receive webhook or Telegram notifications when any keyword appears in any channel.',
+    lucide: <Bell style={{ width: 18, height: 18 }} />,
+  },
+  {
+    icon: '🛠️',
+    title: 'Developer SDK & API',
+    desc: 'Use our Python SDK or REST API to build your own intelligence pipeline.',
+    lucide: <Code2 style={{ width: 18, height: 18 }} />,
+  },
+]
+
+function UseCases() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   return (
-    <div
-      className="border-y"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+    <section
+      id="use-cases"
+      style={{ background: L.surface, padding: '96px 0' }}
     >
-      <div className="max-w-4xl mx-auto px-6 py-8 flex flex-wrap items-center justify-center gap-0">
-        {stats.map((s, i) => (
-          <div key={s.value} className="flex items-center">
-            <div className="px-10 py-1 text-center">
-              <div
-                className="font-bold text-white"
-                style={{ fontSize: '30px', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
-              >
-                {s.value}
-              </div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.label}</div>
-            </div>
-            {i < stats.length - 1 && (
-              <div className="w-px h-10" style={{ background: 'var(--border)' }} />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <h2
+            style={{
+              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+              marginBottom: '12px',
+            }}
+          >
+            Built for everyone watching Telegram
+          </h2>
+          <p style={{ fontSize: '16px', color: L.textMuted }}>One platform. Many intelligence needs.</p>
+        </div>
 
-// ── Pain section ──────────────────────────────────────────────────────────────
-
-function PainSection() {
-  const channels = [
-    { name: 'ForexAlphaVIP', members: '41K', wr: 38, trend: 'down' },
-    { name: 'CryptoCallsPro', members: '28K', wr: 44, trend: 'down' },
-    { name: 'GoldSignalsDaily', members: '19K', wr: 52, trend: 'up' },
-    { name: 'FXMasterAlerts', members: '67K', wr: 41, trend: 'down' },
-    { name: 'PipsHunterPro', members: '33K', wr: 35, trend: 'down' },
-  ]
-
-  return (
-    <section className="py-20" style={{ background: 'var(--bg)' }}>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '16px',
+          }}
+        >
+          {USE_CASES.map((uc, i) => (
             <div
-              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border mb-5"
+              key={i}
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
               style={{
-                background: 'rgba(239,68,68,0.08)',
-                borderColor: 'rgba(239,68,68,0.2)',
-                fontSize: '11px',
-                color: '#f87171',
-                letterSpacing: '0.05em',
+                background: L.bg,
+                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
+                borderRadius: '12px',
+                padding: '24px',
+                cursor: 'default',
+                transition: 'all 0.2s ease',
+                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
               }}
             >
-              THE PROBLEM
-            </div>
-            <h2
-              className="font-bold text-white mb-4 leading-tight"
-              style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.02em' }}
-            >
-              Most channels are losing you money. You just don't have the data to see it.
-            </h2>
-            <p style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '20px' }}>
-              Telegram signal channels rarely show their track record. You see the wins. You don't see the 60% of signals that quietly hit stop loss. 70% win rate means nothing if the R:R is 0.3.
-            </p>
-            <p style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-              SignalScope tracks every signal to its actual outcome — automatically, in the background, on every channel you follow.
-            </p>
-          </div>
-
-          {/* Fake bad channel table */}
-          <div
-            className="rounded-xl border overflow-hidden"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-          >
-            <div
-              className="px-4 py-3 border-b flex items-center justify-between"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-faint)', letterSpacing: '0.06em' }}>
-                YOUR CHANNELS · LAST 90 DAYS
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>win rate</span>
-            </div>
-            {channels.map((ch, i) => (
               <div
-                key={ch.name}
-                className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: i < channels.length - 1 ? '1px solid var(--divider)' : 'none' }}
+                style={{
+                  width: 40, height: 40,
+                  borderRadius: '10px',
+                  background: L.accentDim,
+                  border: `1px solid ${L.accentBorder}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: L.accent,
+                  marginBottom: '16px',
+                }}
               >
-                <div>
-                  <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 500 }}>{ch.name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
-                    {ch.members} members
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-3)' }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${ch.wr}%`,
-                        background: ch.wr >= 50 ? 'var(--win)' : 'var(--loss)',
-                      }}
-                    />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '13px',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 600,
-                      color: ch.wr >= 50 ? 'var(--win)' : 'var(--loss)',
-                      minWidth: '36px',
-                      textAlign: 'right',
-                    }}
-                  >
-                    {ch.wr}%
-                  </span>
-                </div>
+                {uc.lucide}
               </div>
-            ))}
-          </div>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>{uc.title}</h3>
+              <p style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.65 }}>{uc.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-// ── How it works ──────────────────────────────────────────────────────────────
+// ── How It Works ──────────────────────────────────────────────────────────────
 
 function HowItWorks() {
   const steps = [
     {
       n: '01',
-      icon: <Shield className="w-5 h-5" />,
       title: 'Connect your Telegram',
-      desc: 'Add your Telegram API credentials. SignalScope connects read-only — it never posts, never interacts, never touches your messages.',
-      detail: 'Takes under 5 minutes',
+      desc: 'Add your Telegram API credentials. Read-only access — Tapwire never posts, never interacts, never touches your messages.',
+      detail: 'Takes about 2 minutes',
     },
     {
       n: '02',
-      icon: <BarChart2 className="w-5 h-5" />,
-      title: 'Every signal is captured and parsed',
-      desc: 'Entry, SL, TP levels, direction, and pair — extracted automatically from every message on every channel you watch.',
-      detail: '35+ pairs supported',
+      title: 'Configure extractors',
+      desc: 'Choose what to extract: trading signals, keywords, sentiment scores, entity mentions — or enable all extractors at once.',
+      detail: 'Mix and match per channel',
     },
     {
       n: '03',
-      icon: <TrendingUp className="w-5 h-5" />,
-      title: 'See who actually delivers',
-      desc: 'Live price feeds track whether each signal hit entry, reached a TP, or stopped out. Real win rates. Real R:R. No cherry-picking.',
+      title: 'Receive structured data',
+      desc: 'Results flow to your dashboard, JSON API, webhooks, or CLI output — however your workflow needs it.',
       detail: 'Updated in real-time',
     },
   ]
 
   return (
-    <section id="how-it-works" className="py-28" style={{ background: 'var(--bg)' }}>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-16">
+    <section id="how-it-works" style={{ background: L.bg, padding: '96px 0' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '56px' }}>
           <p
-            className="font-semibold mb-3"
-            style={{ fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.08em' }}
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              color: L.accent,
+              letterSpacing: '0.08em',
+              marginBottom: '10px',
+            }}
           >
             HOW IT WORKS
           </p>
           <h2
-            className="font-bold text-white leading-tight"
-            style={{ fontSize: 'clamp(28px, 3.5vw, 40px)', letterSpacing: '-0.02em', maxWidth: '560px' }}
+            style={{
+              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+            }}
           >
-            Set up in 5 minutes.
-            <br />
-            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Data flows forever.</span>
+            Up and running in minutes.
           </h2>
         </div>
 
-        <div className="relative">
-          {/* Connector line (desktop) */}
+        {/* Steps */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '0',
+            position: 'relative',
+          }}
+        >
+          {/* Connector line */}
           <div
-            className="hidden lg:block absolute top-9 left-0 right-0 h-px"
-            style={{ background: 'linear-gradient(to right, transparent, var(--border) 10%, var(--border) 90%, transparent)', zIndex: 0 }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '40px',
+              right: '40px',
+              height: '1px',
+              background: `linear-gradient(to right, transparent, ${L.border} 10%, ${L.border} 90%, transparent)`,
+            }}
           />
 
-          <div className="grid lg:grid-cols-3 gap-px lg:gap-0 relative">
-            {steps.map((step, i) => (
+          {steps.map((step, i) => (
+            <div key={i} style={{ paddingRight: '40px', position: 'relative' }}>
+              {/* Circle */}
               <div
-                key={step.n}
-                className="relative lg:px-8 pb-8 lg:pb-0"
-                style={{ paddingTop: i === 0 ? 0 : undefined }}
+                style={{
+                  width: 40, height: 40,
+                  borderRadius: '50%',
+                  background: L.bg,
+                  border: `2px solid ${L.accent}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: L.mono,
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  color: L.accent,
+                  marginBottom: '20px',
+                  position: 'relative',
+                  zIndex: 1,
+                }}
               >
-                {/* Mobile connector */}
-                {i > 0 && (
-                  <div
-                    className="lg:hidden w-px h-6 mb-4"
-                    style={{ background: 'var(--border)', marginLeft: '19px' }}
-                  />
-                )}
-
-                {/* Number circle */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 font-bold"
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      background: 'var(--bg)',
-                      borderColor: 'var(--accent)',
-                      color: 'var(--accent)',
-                    }}
-                  >
-                    {step.n}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <ArrowRight
-                      className="hidden lg:block absolute top-3 -right-3 w-4 h-4 z-10"
-                      style={{ color: 'var(--text-faint)' }}
-                    />
-                  )}
-                </div>
-
-                <div className="lg:pr-6">
-                  <h3
-                    className="font-semibold text-white mb-2"
-                    style={{ fontSize: '17px' }}
-                  >
-                    {step.title}
-                  </h3>
-                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '10px' }}>
-                    {step.desc}
-                  </p>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--accent)',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    → {step.detail}
-                  </span>
-                </div>
+                {step.n}
               </div>
-            ))}
-          </div>
+
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>
+                {step.title}
+              </h3>
+              <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.65, marginBottom: '10px' }}>
+                {step.desc}
+              </p>
+              <span style={{ fontSize: '11px', color: L.accent, fontFamily: L.mono, fontWeight: 600 }}>
+                → {step.detail}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-// ── Features ──────────────────────────────────────────────────────────────────
+// ── CLI / SDK Section ─────────────────────────────────────────────────────────
 
-function Features() {
-  const tiers = [
-    { tier: 'S', score: 94 },
-    { tier: 'A', score: 78 },
-    { tier: 'B', score: 62 },
-    { tier: 'C', score: 48 },
-    { tier: 'F', score: 21 },
-  ]
+const CLI_TABS = ['CLI', 'Python SDK', 'REST API'] as const
+type CliTab = typeof CLI_TABS[number]
+
+const CLI_CONTENT: Record<CliTab, JSX.Element> = {
+  CLI: (
+    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
+      <span style={{ color: '#8b949e' }}># Install{'\n'}</span>
+      <span style={{ color: '#79c0ff' }}>pip install</span>
+      <span style={{ color: '#e6edf3' }}> tapwire{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># Watch for trading signals{'\n'}</span>
+      <span style={{ color: '#79c0ff' }}>tapwire watch</span>
+      <span style={{ color: '#e6edf3' }}> @forexalpha</span>
+      <span style={{ color: '#ff7b72' }}> --extract</span>
+      <span style={{ color: '#a5d6ff' }}> signals</span>
+      <span style={{ color: '#ff7b72' }}> --output</span>
+      <span style={{ color: '#a5d6ff' }}> json{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># Watch for keywords with webhook delivery{'\n'}</span>
+      <span style={{ color: '#79c0ff' }}>tapwire watch</span>
+      <span style={{ color: '#e6edf3' }}> @cryptonews</span>
+      <span style={{ color: '#ff7b72' }}> --keywords</span>
+      <span style={{ color: '#a5d6ff' }}> &quot;bitcoin,eth&quot;</span>
+      <span style={{ color: '#ff7b72' }}> --webhook</span>
+      <span style={{ color: '#a5d6ff' }}> https://hooks.slack.com/...{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># Export history as CSV{'\n'}</span>
+      <span style={{ color: '#79c0ff' }}>tapwire export</span>
+      <span style={{ color: '#ff7b72' }}> --channel</span>
+      <span style={{ color: '#e6edf3' }}> @forexalpha</span>
+      <span style={{ color: '#ff7b72' }}> --since</span>
+      <span style={{ color: '#a5d6ff' }}> 30d</span>
+      <span style={{ color: '#ff7b72' }}> --format</span>
+      <span style={{ color: '#a5d6ff' }}> csv</span>
+    </pre>
+  ),
+
+  'Python SDK': (
+    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
+      <span style={{ color: '#ff7b72' }}>from</span>
+      <span style={{ color: '#e6edf3' }}> tapwire </span>
+      <span style={{ color: '#ff7b72' }}>import</span>
+      <span style={{ color: '#79c0ff' }}> Watcher</span>
+      <span style={{ color: '#e6edf3' }}>, </span>
+      <span style={{ color: '#79c0ff' }}>ExtractorRegistry{'\n'}</span>
+      <span style={{ color: '#ff7b72' }}>from</span>
+      <span style={{ color: '#e6edf3' }}> tapwire.extractors </span>
+      <span style={{ color: '#ff7b72' }}>import</span>
+      <span style={{ color: '#79c0ff' }}> SignalExtractor</span>
+      <span style={{ color: '#e6edf3' }}>, </span>
+      <span style={{ color: '#79c0ff' }}>KeywordExtractor{'\n\n'}</span>
+
+      <span style={{ color: '#ff7b72' }}>async def</span>
+      <span style={{ color: '#d2a8ff' }}> main</span>
+      <span style={{ color: '#e6edf3' }}>():{'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>    watcher </span>
+      <span style={{ color: '#ff7b72' }}>=</span>
+      <span style={{ color: '#79c0ff' }}> Watcher</span>
+      <span style={{ color: '#e6edf3' }}>.</span>
+      <span style={{ color: '#d2a8ff' }}>from_env</span>
+      <span style={{ color: '#e6edf3' }}>(){'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>    registry </span>
+      <span style={{ color: '#ff7b72' }}>=</span>
+      <span style={{ color: '#79c0ff' }}> ExtractorRegistry</span>
+      <span style={{ color: '#e6edf3' }}>(){'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>    registry.</span>
+      <span style={{ color: '#d2a8ff' }}>register</span>
+      <span style={{ color: '#e6edf3' }}>(</span>
+      <span style={{ color: '#79c0ff' }}>SignalExtractor</span>
+      <span style={{ color: '#e6edf3' }}>())</span>
+      <span style={{ color: '#8b949e' }}>{'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>    registry.</span>
+      <span style={{ color: '#d2a8ff' }}>register</span>
+      <span style={{ color: '#e6edf3' }}>(</span>
+      <span style={{ color: '#79c0ff' }}>KeywordExtractor</span>
+      <span style={{ color: '#e6edf3' }}>(</span>
+      <span style={{ color: '#a5d6ff' }}>[&quot;bitcoin&quot;, &quot;hack&quot;, &quot;launch&quot;]</span>
+      <span style={{ color: '#e6edf3' }}>)){'\n\n'}</span>
+      <span style={{ color: '#ff7b72' }}>    async for</span>
+      <span style={{ color: '#e6edf3' }}> event </span>
+      <span style={{ color: '#ff7b72' }}>in</span>
+      <span style={{ color: '#e6edf3' }}> watcher.</span>
+      <span style={{ color: '#d2a8ff' }}>stream</span>
+      <span style={{ color: '#e6edf3' }}>(</span>
+      <span style={{ color: '#a5d6ff' }}>&quot;@cryptonews&quot;</span>
+      <span style={{ color: '#e6edf3' }}>):{'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>        events </span>
+      <span style={{ color: '#ff7b72' }}>=</span>
+      <span style={{ color: '#e6edf3' }}> registry.</span>
+      <span style={{ color: '#d2a8ff' }}>process</span>
+      <span style={{ color: '#e6edf3' }}>(event.text){'\n'}</span>
+      <span style={{ color: '#ff7b72' }}>        for</span>
+      <span style={{ color: '#e6edf3' }}> ev </span>
+      <span style={{ color: '#ff7b72' }}>in</span>
+      <span style={{ color: '#e6edf3' }}> events:{'\n'}</span>
+      <span style={{ color: '#e6edf3' }}>            </span>
+      <span style={{ color: '#79c0ff' }}>print</span>
+      <span style={{ color: '#e6edf3' }}>(ev.event_type, ev.data)</span>
+    </pre>
+  ),
+
+  'REST API': (
+    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
+      <span style={{ color: '#8b949e' }}># List channels{'\n'}</span>
+      <span style={{ color: '#3fb950' }}>GET</span>
+      <span style={{ color: '#e6edf3' }}> /api/channels{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># Get signal feed{'\n'}</span>
+      <span style={{ color: '#3fb950' }}>GET</span>
+      <span style={{ color: '#e6edf3' }}> /api/signals</span>
+      <span style={{ color: '#ff7b72' }}>?channel_id</span>
+      <span style={{ color: '#e6edf3' }}>=xxx</span>
+      <span style={{ color: '#ff7b72' }}>&amp;limit</span>
+      <span style={{ color: '#e6edf3' }}>=50{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># Get leaderboard{'\n'}</span>
+      <span style={{ color: '#3fb950' }}>GET</span>
+      <span style={{ color: '#e6edf3' }}> /api/scores/leaderboard</span>
+      <span style={{ color: '#ff7b72' }}>?window</span>
+      <span style={{ color: '#e6edf3' }}>=30d</span>
+      <span style={{ color: '#ff7b72' }}>&amp;min_signals</span>
+      <span style={{ color: '#e6edf3' }}>=5{'\n\n'}</span>
+
+      <span style={{ color: '#8b949e' }}># WebSocket live feed{'\n'}</span>
+      <span style={{ color: '#f0883e' }}>WS</span>
+      <span style={{ color: '#e6edf3' }}> /ws/feed</span>
+      <span style={{ color: '#ff7b72' }}>?token</span>
+      <span style={{ color: '#e6edf3' }}>=&lt;jwt&gt;</span>
+    </pre>
+  ),
+}
+
+function CliSection() {
+  const [activeTab, setActiveTab] = useState<CliTab>('CLI')
 
   return (
-    <section style={{ background: 'var(--surface)', paddingTop: '80px', paddingBottom: '80px' }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="mb-14">
-          <p
-            className="font-semibold mb-3"
-            style={{ fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.08em' }}
-          >
-            FEATURES
-          </p>
-          <h2
-            className="font-bold text-white leading-tight"
-            style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', letterSpacing: '-0.02em' }}
-          >
-            One question. Every answer.
-            <br />
-            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Is this channel actually worth following?</span>
-          </h2>
-        </div>
-
-        <div className="grid lg:grid-cols-5 gap-5">
-          {/* Wide left */}
-          <div
-            className="lg:col-span-3 rounded-xl border p-7"
-            style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-          >
-            <div
-              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border mb-4"
-              style={{ background: 'var(--win-dim)', borderColor: 'rgba(34,197,94,0.3)', fontSize: '11px', color: 'var(--win)', letterSpacing: '0.05em' }}
+    <section
+      id="cli-section"
+      style={{ background: L.term, padding: '96px 0' }}
+    >
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.6fr',
+            gap: '64px',
+            alignItems: 'start',
+          }}
+        >
+          {/* Left text */}
+          <div>
+            <p
+              style={{
+                fontSize: '12px',
+                fontWeight: 700,
+                color: L.accent,
+                letterSpacing: '0.08em',
+                marginBottom: '12px',
+              }}
             >
-              REAL OUTCOME TRACKING
-            </div>
-            <h3 className="font-bold text-white mb-2" style={{ fontSize: '22px', letterSpacing: '-0.01em' }}>
-              Stop guessing. Start knowing.
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '20px' }}>
-              Every signal is tracked from the moment it posts to when it resolves — win, loss, or expired. You'll know exactly how each channel performs week by week.
+              DEVELOPER-FIRST
             </p>
-
-            <div className="flex flex-col gap-2.5">
+            <h2
+              style={{
+                fontSize: 'clamp(26px, 3vw, 36px)',
+                fontWeight: 800,
+                color: '#e6edf3',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.2,
+                marginBottom: '16px',
+              }}
+            >
+              Developer-first from day one
+            </h2>
+            <p style={{ fontSize: '15px', color: '#8b949e', lineHeight: 1.7, marginBottom: '28px' }}>
+              A clean Python SDK, REST API, and CLI. Pipe Telegram data anywhere. Build your own
+              intelligence pipeline in minutes.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
-                { label: 'Week 1', pct: 72 },
-                { label: 'Week 2', pct: 81 },
-                { label: 'Week 3', pct: 44 },
-                { label: 'Week 4', pct: 68 },
-              ].map((w) => (
-                <div key={w.label} className="flex items-center gap-3">
-                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)', width: '46px', flexShrink: 0 }}>
-                    {w.label}
-                  </span>
-                  <div className="flex-1 h-4 rounded overflow-hidden" style={{ background: 'var(--surface-3)' }}>
-                    <div
-                      className="h-full transition-all duration-500"
-                      style={{
-                        width: `${w.pct}%`,
-                        background: w.pct >= 50 ? 'rgba(34,197,94,0.65)' : 'rgba(239,68,68,0.65)',
-                      }}
-                    />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 600,
-                      color: w.pct >= 50 ? 'var(--win)' : 'var(--loss)',
-                      width: '36px',
-                      flexShrink: 0,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {w.pct}%
-                  </span>
+                'pip install tapwire',
+                'Webhook delivery',
+                'Full JSON / CSV export',
+                'WebSocket live feed',
+              ].map((f) => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Check style={{ width: 14, height: 14, color: L.accent, flexShrink: 0 }} />
+                  <span style={{ fontSize: '14px', color: '#8b949e', fontFamily: L.mono }}>{f}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right stack */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
+          {/* Right code block */}
+          <div>
+            {/* Tab bar */}
             <div
-              className="rounded-xl border p-6 flex-1"
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+              style={{
+                display: 'flex',
+                gap: '4px',
+                marginBottom: '0',
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: '10px 10px 0 0',
+                border: `1px solid ${L.termBorder}`,
+                borderBottom: 'none',
+                padding: '6px 6px 0',
+              }}
             >
-              <div
-                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border mb-3"
-                style={{ background: 'var(--active-dim)', borderColor: 'rgba(245,158,11,0.3)', fontSize: '11px', color: 'var(--active)', letterSpacing: '0.05em' }}
-              >
-                CHANNEL LEADERBOARD
-              </div>
-              <h3 className="font-semibold text-white mb-2" style={{ fontSize: '17px' }}>
-                See who's actually delivering
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                A live leaderboard ranks every channel by real performance — sortable by win rate, R:R, and entry accuracy.
-              </p>
+              {CLI_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px 6px 0 0',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    fontFamily: L.mono,
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: activeTab === tab ? L.term : 'transparent',
+                    color: activeTab === tab ? '#e6edf3' : '#8b949e',
+                    borderBottom: activeTab === tab ? `2px solid ${L.accent}` : '2px solid transparent',
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
+            {/* Code area */}
             <div
-              className="rounded-xl border p-6"
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+              style={{
+                background: L.term,
+                border: `1px solid ${L.termBorder}`,
+                borderRadius: '0 0 10px 10px',
+                padding: '20px 22px',
+                fontFamily: L.mono,
+                fontSize: '13px',
+                lineHeight: 1.7,
+                overflowX: 'auto',
+                minHeight: '240px',
+              }}
             >
-              <div
-                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border mb-3"
-                style={{ background: 'var(--accent-dim)', borderColor: 'rgba(0,212,170,0.3)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.05em' }}
-              >
-                QUALITY SCORE
-              </div>
-              <h3 className="font-semibold text-white mb-3" style={{ fontSize: '17px' }}>
-                Instant quality tiers
-              </h3>
-              <div className="flex gap-2">
-                {tiers.map((t) => (
-                  <div
-                    key={t.tier}
-                    className="flex-1 flex flex-col items-center gap-1 p-2 rounded-lg"
-                    style={{ background: `${TIER_COLOR[t.tier]}12` }}
-                  >
-                    <span
-                      className="font-bold"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: '17px', color: TIER_COLOR[t.tier] }}
-                    >
-                      {t.tier}
-                    </span>
-                    <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
-                      {t.score}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {CLI_CONTENT[activeTab]}
             </div>
           </div>
         </div>
@@ -801,46 +864,7 @@ function Features() {
   )
 }
 
-// ── Mid-page CTA ──────────────────────────────────────────────────────────────
-
-function MidCta() {
-  const navigate = useNavigate()
-  return (
-    <section
-      className="py-20 text-center"
-      style={{
-        background: 'var(--bg)',
-        backgroundImage: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(0,212,170,0.05) 0%, transparent 70%)',
-      }}
-    >
-      <div className="max-w-2xl mx-auto px-6">
-        <h2
-          className="font-bold text-white mb-4 leading-tight"
-          style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.02em' }}
-        >
-          How does your current channel stack hold up?
-        </h2>
-        <p style={{ fontSize: '16px', color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.6 }}>
-          Connect your channels in 5 minutes and see the leaderboard. Free, no card required.
-        </p>
-        <button
-          onClick={() => navigate('/register')}
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold transition-all hover:opacity-90"
-          style={{
-            background: 'var(--accent)',
-            color: '#0a0a0b',
-            fontSize: '15px',
-            boxShadow: '0 4px 24px rgba(0,212,170,0.3)',
-          }}
-        >
-          See your channel scores <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-    </section>
-  )
-}
-
-// ── Pricing ──────────────────────────────────────────────────────────────────
+// ── Pricing ───────────────────────────────────────────────────────────────────
 
 function Pricing() {
   const [annual, setAnnual] = useState(false)
@@ -858,7 +882,7 @@ function Pricing() {
         'Win rate & R:R',
         'Signal feed',
       ],
-      missing: ['Entry accuracy', 'MT5 integration'],
+      missing: ['Entry accuracy', 'MT5 integration', 'CSV export'],
       cta: 'Start Free',
       action: () => navigate('/register'),
       featured: false,
@@ -902,42 +926,67 @@ function Pricing() {
   ]
 
   return (
-    <section id="pricing" className="py-28" style={{ background: 'var(--surface)' }}>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <p
-            className="font-semibold mb-3"
-            style={{ fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.08em' }}
-          >
+    <section id="pricing" style={{ background: L.surface, padding: '96px 0' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
             PRICING
           </p>
           <h2
-            className="font-bold text-white mb-3"
-            style={{ fontSize: 'clamp(28px, 4vw, 42px)', letterSpacing: '-0.02em' }}
+            style={{
+              fontSize: 'clamp(28px, 4vw, 42px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+              marginBottom: '12px',
+            }}
           >
             Simple pricing
           </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '16px', color: L.textMuted, marginBottom: '24px' }}>
             Start free. Upgrade when you're ready.
           </p>
 
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <span style={{ fontSize: '14px', color: annual ? 'var(--text-muted)' : 'var(--text)' }}>Monthly</span>
+          {/* Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '14px', color: annual ? L.textFaint : L.text }}>Monthly</span>
             <button
               onClick={() => setAnnual((a) => !a)}
-              className="relative w-11 h-6 rounded-full transition-colors"
-              style={{ background: annual ? 'var(--accent)' : 'var(--surface-3)' }}
+              style={{
+                position: 'relative',
+                width: '44px', height: '24px',
+                borderRadius: '999px',
+                border: 'none',
+                cursor: 'pointer',
+                background: annual ? L.accent : L.surface2,
+                transition: 'background 0.2s',
+              }}
             >
               <div
-                className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all"
-                style={{ left: annual ? '24px' : '4px' }}
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  left: annual ? '24px' : '4px',
+                  width: '16px', height: '16px',
+                  borderRadius: '50%',
+                  background: '#ffffff',
+                  transition: 'left 0.2s',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                }}
               />
             </button>
-            <span style={{ fontSize: '14px', color: annual ? 'var(--text)' : 'var(--text-muted)' }}>
+            <span style={{ fontSize: '14px', color: annual ? L.text : L.textFaint }}>
               Annual{' '}
               <span
-                className="inline-flex px-1.5 py-0.5 rounded"
-                style={{ background: 'var(--win-dim)', color: 'var(--win)', fontSize: '11px' }}
+                style={{
+                  display: 'inline-flex',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                  background: 'rgba(22,163,74,0.1)',
+                  color: L.win,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}
               >
                 2 months free
               </span>
@@ -945,78 +994,106 @@ function Pricing() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {tiers.map((tier) => (
             <div
               key={tier.name}
-              className="rounded-xl border flex flex-col p-7 relative"
               style={{
-                background: 'var(--surface)',
-                borderColor: tier.featured ? 'var(--accent)' : 'var(--border)',
-                boxShadow: tier.featured ? '0 0 40px rgba(0,212,170,0.12)' : 'none',
+                background: L.bg,
+                border: `1px solid ${tier.featured ? L.accent : L.border}`,
+                borderRadius: '16px',
+                padding: '28px',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: tier.featured ? `0 0 40px rgba(0,196,154,0.12)` : '0 1px 4px rgba(0,0,0,0.04)',
               }}
             >
               {tier.featured && (
                 <div
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full font-semibold"
-                  style={{ background: 'var(--accent)', color: '#0a0a0b', fontSize: '11px' }}
+                  style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: '3px 12px',
+                    borderRadius: '999px',
+                    background: L.accent,
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   Most Popular
                 </div>
               )}
 
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-white" style={{ fontSize: '17px' }}>{tier.name}</h3>
-                </div>
-                <p style={{ fontSize: '13px', color: 'var(--text-faint)', marginBottom: '12px' }}>{tier.desc}</p>
-                <div className="flex items-end gap-1">
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '4px' }}>{tier.name}</h3>
+                <p style={{ fontSize: '13px', color: L.textFaint, marginBottom: '14px' }}>{tier.desc}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                   <span
-                    className="font-bold text-white"
-                    style={{ fontSize: '34px', fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+                    style={{
+                      fontSize: '34px',
+                      fontWeight: 800,
+                      color: L.text,
+                      fontFamily: L.mono,
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1,
+                    }}
                   >
                     {tier.price === 0 ? 'Free' : `£${annual ? tier.annualPrice : tier.price}`}
                   </span>
                   {tier.price > 0 && (
-                    <span style={{ fontSize: '14px', color: 'var(--text-muted)', paddingBottom: '5px' }}>/mo</span>
+                    <span style={{ fontSize: '14px', color: L.textMuted, paddingBottom: '4px' }}>/mo</span>
                   )}
                 </div>
                 {annual && tier.price > 0 && (
-                  <p style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
+                  <p style={{ fontSize: '12px', color: L.textFaint, marginTop: '4px', fontFamily: L.mono }}>
                     billed £{tier.annualPrice * 12}/year
                   </p>
                 )}
               </div>
 
-              <ul className="flex flex-col gap-2.5 flex-1 mb-7">
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, flex: 1, marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                     <Check
-                      className="w-4 h-4 flex-shrink-0 mt-0.5"
-                      style={{ color: tier.featured ? 'var(--accent)' : 'var(--win)' }}
+                      style={{
+                        width: 14, height: 14, flexShrink: 0, marginTop: '2px',
+                        color: tier.featured ? L.accent : L.win,
+                      }}
                     />
-                    <span style={{ fontSize: '14px', color: 'var(--text)' }}>{f}</span>
+                    <span style={{ fontSize: '14px', color: L.text }}>{f}</span>
                   </li>
                 ))}
                 {tier.missing.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 opacity-40">
-                    <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                      <div className="w-3 h-px" style={{ background: 'var(--text-faint)' }} />
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', opacity: 0.35 }}>
+                    <div style={{ width: 14, height: 14, flexShrink: 0, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 10, height: '1px', background: L.textFaint }} />
                     </div>
-                    <span style={{ fontSize: '14px', color: 'var(--text-faint)' }}>{f}</span>
+                    <span style={{ fontSize: '14px', color: L.textFaint }}>{f}</span>
                   </li>
                 ))}
               </ul>
 
               <button
                 onClick={tier.action}
-                className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
                 style={{
-                  background: tier.featured ? 'var(--accent)' : 'var(--surface-3)',
-                  color: tier.featured ? '#0a0a0b' : 'var(--text)',
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
                   fontSize: '14px',
-                  border: tier.featured ? 'none' : '1px solid var(--border)',
+                  cursor: 'pointer',
+                  border: tier.featured ? 'none' : `1px solid ${L.border}`,
+                  background: tier.featured ? L.accent : L.surface,
+                  color: tier.featured ? '#ffffff' : L.text,
+                  transition: 'opacity 0.15s',
                 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
                 {tier.cta}
               </button>
@@ -1033,19 +1110,19 @@ function Pricing() {
 function Testimonials() {
   const quotes = [
     {
-      quote: "I was following 8 channels thinking they were all decent. SignalScope showed 6 of them had sub-40% win rates. Dropped them immediately and my account started growing.",
+      quote: 'I was following 8 channels thinking they were all decent. Tapwire showed 6 of them had sub-40% win rates. Dropped them immediately.',
       name: 'James K.',
       role: 'Retail FX trader, 4 years',
       stars: 5,
     },
     {
-      quote: "The R:R tracking is what sold me. I realised my best channel had a 70% win rate but the R:R was 0.4. I was actually losing money following signals that won most of the time.",
+      quote: 'The R:R tracking is what sold me. I realised my best channel had a 70% win rate but R:R of 0.4. I was actually losing money following signals that won most of the time.',
       name: 'Sarah M.',
       role: 'Crypto & commodities trader',
       stars: 5,
     },
     {
-      quote: "Setup took 5 minutes. Now I have a clean leaderboard of all my channels. The tier system makes it instant to see who's actually delivering.",
+      quote: 'Setup took 5 minutes. Now I have a clean leaderboard of all my channels. The tier system makes it instant to see who is actually delivering.',
       name: 'Tom R.',
       role: 'Part-time futures trader',
       stars: 5,
@@ -1053,43 +1130,68 @@ function Testimonials() {
   ]
 
   return (
-    <section className="py-24" style={{ background: 'var(--bg)' }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-12">
+    <section style={{ background: L.bg, padding: '88px 0' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <h2
-            className="font-bold text-white"
-            style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.02em' }}
+            style={{
+              fontSize: 'clamp(24px, 3vw, 36px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+            }}
           >
             Traders who stopped guessing
           </h2>
         </div>
-        <div className="grid md:grid-cols-3 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {quotes.map((q) => (
             <div
               key={q.name}
-              className="rounded-xl border p-6 flex flex-col gap-4"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+              style={{
+                background: L.surface,
+                border: `1px solid ${L.border}`,
+                borderRadius: '12px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}
             >
-              {/* Stars */}
-              <div className="flex gap-0.5">
+              <div style={{ display: 'flex', gap: '2px' }}>
                 {Array.from({ length: q.stars }).map((_, i) => (
                   <span key={i} style={{ color: '#f59e0b', fontSize: '14px' }}>★</span>
                 ))}
               </div>
-
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.75, flex: 1 }}>
-                “{q.quote}”
+              <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.75, flex: 1 }}>
+                "{q.quote}"
               </p>
-              <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  paddingTop: '14px',
+                  borderTop: `1px solid ${L.border}`,
+                }}
+              >
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center font-semibold flex-shrink-0"
-                  style={{ background: 'var(--accent-dim)', color: 'var(--accent)', fontSize: '13px' }}
+                  style={{
+                    width: 32, height: 32,
+                    borderRadius: '50%',
+                    background: L.accentDim,
+                    border: `1px solid ${L.accentBorder}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: L.accent,
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
                 >
                   {q.name[0]}
                 </div>
                 <div>
-                  <div className="font-semibold text-white" style={{ fontSize: '13px' }}>{q.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{q.role}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: L.text }}>{q.name}</div>
+                  <div style={{ fontSize: '12px', color: L.textFaint }}>{q.role}</div>
                 </div>
               </div>
             </div>
@@ -1100,86 +1202,55 @@ function Testimonials() {
   )
 }
 
-// ── FAQ ───────────────────────────────────────────────────────────────────────
+// ── Final CTA ─────────────────────────────────────────────────────────────────
 
-const FAQ_ITEMS = [
-  {
-    q: 'How does SignalScope get the signals?',
-    a: 'You connect your Telegram account using the official Telegram API. SignalScope reads messages from the channels you specify — it never posts, never interacts, never modifies anything.',
-  },
-  {
-    q: 'Does it work with private channels?',
-    a: "Yes. Any channel accessible through your Telegram account — public, private, or a group you're in — can be monitored.",
-  },
-  {
-    q: 'How accurate is the signal parsing?',
-    a: "95%+ of standard signal formats are parsed correctly. Confidence scores on every signal show when a parse is incomplete. You can always view the raw message alongside the parsed result.",
-  },
-  {
-    q: 'Where does the price data come from?',
-    a: 'Crypto outcomes use live Binance data. FX, gold, and indices use market data feeds. Optionally connect your MT5 account for broker-accurate pricing.',
-  },
-  {
-    q: 'Can I export my data?',
-    a: 'Pro and Team plans get full CSV export. Team plan includes API access for programmatic retrieval of all your signal and outcome data.',
-  },
-  {
-    q: 'Is my Telegram account safe?',
-    a: "Yes. We use official Telegram API methods with read-only access. Your API credentials are encrypted at rest. SignalScope never sends messages or interacts with channels on your behalf.",
-  },
-]
-
-function FAQ() {
-  const [open, setOpen] = useState<number | null>(0)
+function FinalCta() {
+  const navigate = useNavigate()
 
   return (
-    <section className="py-24" style={{ background: 'var(--surface)' }}>
-      <div className="max-w-2xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <p
-            className="font-semibold mb-3"
-            style={{ fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.08em' }}
-          >
-            FAQ
-          </p>
-          <h2 className="font-bold text-white" style={{ fontSize: 'clamp(24px, 3vw, 36px)', letterSpacing: '-0.02em' }}>
-            Common questions
-          </h2>
-        </div>
-        <div className="flex flex-col gap-2">
-          {FAQ_ITEMS.map((item, i) => (
-            <div
-              key={i}
-              className="rounded-xl border overflow-hidden transition-colors"
-              style={{
-                borderColor: open === i ? 'rgba(0,212,170,0.3)' : 'var(--border)',
-                background: open === i ? 'var(--surface-2)' : 'var(--bg)',
-              }}
-            >
-              <button
-                className="w-full flex items-center justify-between px-5 py-4 text-left"
-                onClick={() => setOpen(open === i ? null : i)}
-              >
-                <span className="font-medium text-white pr-4" style={{ fontSize: '15px' }}>
-                  {item.q}
-                </span>
-                <ChevronDown
-                  className={clsx(
-                    'w-4 h-4 flex-shrink-0 transition-transform duration-200',
-                    open === i ? 'rotate-180' : ''
-                  )}
-                  style={{ color: open === i ? 'var(--accent)' : 'var(--text-faint)' }}
-                />
-              </button>
-              {open === i && (
-                <div className="px-5 pb-5" style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.75 }}>
-                  {item.a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+    <section
+      style={{
+        background: `linear-gradient(135deg, #00b890 0%, #00c49a 40%, #00d4aa 100%)`,
+        padding: '96px 24px',
+        textAlign: 'center',
+      }}
+    >
+      <h2
+        style={{
+          fontSize: 'clamp(28px, 4vw, 44px)',
+          fontWeight: 800,
+          color: '#ffffff',
+          letterSpacing: '-0.025em',
+          marginBottom: '14px',
+        }}
+      >
+        Start monitoring in 5 minutes
+      </h2>
+      <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginBottom: '36px' }}>
+        Free plan. No card. Works with any Telegram channel.
+      </p>
+      <button
+        onClick={() => navigate('/register')}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '14px 32px',
+          borderRadius: '10px',
+          background: '#ffffff',
+          color: L.text,
+          fontWeight: 700,
+          fontSize: '15px',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.18)' }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)' }}
+      >
+        Start Free <ArrowRight style={{ width: 16, height: 16 }} />
+      </button>
     </section>
   )
 }
@@ -1188,34 +1259,53 @@ function FAQ() {
 
 function Footer() {
   return (
-    <footer className="border-t" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
-      <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2.5">
+    <footer
+      style={{
+        background: L.surface,
+        borderTop: `1px solid ${L.border}`,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '40px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '24px',
+        }}
+      >
+        {/* Logo + tagline */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="13" stroke="#00d4aa" strokeWidth="1.5" />
-            <circle cx="16" cy="16" r="7" stroke="#00d4aa" strokeWidth="1" opacity="0.4" />
-            <circle cx="16" cy="16" r="2.5" fill="#00d4aa" />
+            <circle cx="16" cy="16" r="13" stroke={L.accent} strokeWidth="1.5" />
+            <circle cx="16" cy="16" r="7" stroke={L.accent} strokeWidth="1" opacity="0.4" />
+            <circle cx="16" cy="16" r="2.5" fill={L.accent} />
           </svg>
           <div>
-            <div className="font-semibold text-white" style={{ fontSize: '14px' }}>SignalScope</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>
-              Know if your channels are actually good.
-            </div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: L.text }}>Tapwire</div>
+            <div style={{ fontSize: '11px', color: L.textFaint }}>Telegram intelligence platform</div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-6 justify-center">
+
+        {/* Links */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
           {['Privacy', 'Terms', 'Contact', 'Docs'].map((l) => (
             <a
               key={l}
               href="#"
-              className="transition-colors hover:text-white"
-              style={{ fontSize: '13px', color: 'var(--text-muted)' }}
+              style={{ fontSize: '13px', color: L.textMuted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = L.text)}
+              onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
             >
               {l}
             </a>
           ))}
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>© 2026 SignalScope</div>
+
+        <div style={{ fontSize: '12px', color: L.textFaint }}>© 2026 Tapwire</div>
       </div>
     </footer>
   )
@@ -1225,17 +1315,15 @@ function Footer() {
 
 export default function Landing() {
   return (
-    <div style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div style={{ background: L.bg, color: L.text, overflowX: 'hidden' }}>
       <Nav />
       <Hero />
-      <StatsBar />
-      <PainSection />
+      <UseCases />
       <HowItWorks />
-      <Features />
-      <MidCta />
+      <CliSection />
       <Pricing />
       <Testimonials />
-      <FAQ />
+      <FinalCta />
       <Footer />
     </div>
   )

@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SignalScope API", lifespan=lifespan)
+app = FastAPI(title="Tapwire API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

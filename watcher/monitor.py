@@ -3,8 +3,9 @@ import logging
 import time
 import uuid
 from typing import Optional, Callable, Any
-from watcher.client import SignalScopeClient
-from parser.signal_parser import parse_telegram_signal, ParsedSignal
+from watcher.client import TapwireClient
+from parser.extractor_registry import ExtractorRegistry
+from parser.base_extractor import ExtractedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -12,13 +13,15 @@ logger = logging.getLogger(__name__)
 class ChannelMonitor:
     def __init__(
         self,
-        client: SignalScopeClient,
-        on_signal: Callable,  # async callback(channel_id, parsed_signal, raw_text, message_id)
+        client: TapwireClient,
+        on_signal: Callable,  # async callback(channel_id, events: list[ExtractedEvent], raw_text, message_id)
         poll_interval: float = 5.0,
+        registry: Optional[ExtractorRegistry] = None,
     ):
         self.client = client
         self.on_signal = on_signal
         self.poll_interval = poll_interval
+        self.registry = registry or ExtractorRegistry.default()
         self._channels: dict = {}  # channel_id -> {"name": str, "last_msg_id": int, "telegram_id": int}
         self._running = False
         self._last_ids: dict = {}  # str(telegram_id) -> int
@@ -72,11 +75,11 @@ class ChannelMonitor:
                 continue
 
             try:
-                parsed = parse_telegram_signal(text)
-                if parsed.signal_type in ("market", "pending", "update", "cancel"):
-                    await self.on_signal(channel_id, parsed, text, msg.id)
+                events = self.registry.process(text, channel_id=channel_id, message_id=msg.id)
+                if events:
+                    await self.on_signal(channel_id, events, text, msg.id)
             except Exception as e:
-                logger.warning(f"Parse error: {e}")
+                logger.warning(f"Extract error: {e}")
 
         if max_id > last_id:
             self._last_ids[key] = max_id

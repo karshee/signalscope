@@ -12,3 +12,4 @@ ccxt==4.3.98
 apscheduler==3.10.4
 python-dotenv==1.0.1
 httpx==0.27.2
+setuptools>=69.0

@@ -58,7 +58,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         </svg>
         {!collapsed && (
           <span className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-            SignalScope
+            Tapwire
           </span>
         )}
       </div>

@@ -2,7 +2,7 @@ import aiosqlite
 import os
 from contextlib import asynccontextmanager
 
-DB_PATH = os.getenv("DATABASE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "data", "signalscope.db"))
+DB_PATH = os.getenv("DATABASE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "data", "tapwire.db"))
 
 
 @asynccontextmanager

@@ -41,8 +41,8 @@ async def stats_today(current_user: dict = Depends(get_current_user)):
             active_row = await cursor.fetchone()
 
     return {
-        "signals_today": today_row["count"] if today_row else 0,
-        "active_signals": active_row["count"] if active_row else 0,
+        "total_today": today_row["count"] if today_row else 0,
+        "active": active_row["count"] if active_row else 0,
     }
 
 
@@ -83,7 +83,7 @@ async def list_signals(
             f"""
             SELECT
                 s.*,
-                o.status as outcome_status,
+                o.status as status,
                 o.pips_result,
                 o.rr_result,
                 o.entry_hit,
@@ -116,7 +116,7 @@ async def get_signal(
             SELECT
                 s.*,
                 o.id as outcome_id,
-                o.status as outcome_status,
+                o.status as status,
                 o.entry_hit, o.entry_hit_at, o.entry_price_actual,
                 o.tp1_hit, o.tp2_hit, o.tp3_hit, o.sl_hit,
                 o.close_price, o.pips_result, o.rr_result,

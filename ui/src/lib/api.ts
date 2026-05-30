@@ -87,6 +87,11 @@ export const api = {
       client.post<{ access_token: string }>('/api/auth/register', { name, email, password }),
     logout: () => client.post('/api/auth/logout'),
     me: () => client.get<User>('/api/auth/me'),
+    updateProfile: (data: { name?: string; email?: string }) =>
+      client.put<User>('/api/auth/me', data),
+    changePassword: (current_password: string, new_password: string) =>
+      client.post('/api/auth/change-password', { current_password, new_password }),
+    deleteAccount: () => client.delete('/api/auth/me'),
   },
   channels: {
     list: () => client.get<Channel[]>('/api/channels'),

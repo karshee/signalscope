@@ -46,7 +46,10 @@ export default function Signals() {
           api.signals.list({ limit: 100 }),
           api.channels.list(),
         ])
-        if (sigRes.status === 'fulfilled') setSignals(sigRes.value.data)
+        if (sigRes.status === 'fulfilled') {
+          const data = sigRes.value.data
+          setSignals(Array.isArray(data) ? data : [])
+        }
         if (chRes.status === 'fulfilled') setChannels(chRes.value.data)
       } finally {
         setLoading(false)
@@ -91,45 +94,24 @@ export default function Signals() {
       <div className="flex flex-col h-full overflow-hidden">
         {/* Filter bar */}
         <div
-          className="px-6 py-4 border-b border-[var(--border)] flex-shrink-0"
+          className="px-4 lg:px-6 py-3 border-b border-[var(--border)] flex-shrink-0"
           style={{ background: 'var(--surface)' }}
         >
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Pair search */}
+          {/* Row 1: search + channel + count */}
+          <div className="flex items-center gap-2 mb-2.5">
             <input
               type="text"
-              placeholder="Filter pair... (e.g. XAUUSD)"
+              placeholder="Pair… e.g. XAUUSD"
               value={pair}
               onChange={(e) => setPair(e.target.value)}
-              className="px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors"
-              style={{ fontSize: 'var(--text-sm)', width: '200px', fontFamily: 'var(--font-mono)' }}
+              className="flex-1 min-w-0 px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors"
+              style={{ fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)' }}
             />
-
-            {/* Direction */}
-            <div className="flex gap-1">
-              {(['ALL', 'BUY', 'SELL'] as Direction[]).map((d) => (
-                <FilterBtn key={d} label={d} active={direction === d} onClick={() => setDirection(d)} />
-              ))}
-            </div>
-
-            {/* Status */}
-            <div className="flex gap-1 flex-wrap">
-              {(['ALL', 'active', 'win', 'loss', 'expired', 'pending'] as Status[]).map((s) => (
-                <FilterBtn
-                  key={s}
-                  label={s === 'ALL' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}
-                  active={status === s}
-                  onClick={() => setStatus(s)}
-                />
-              ))}
-            </div>
-
-            {/* Channel filter */}
             {channels.length > 0 && (
               <select
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
-                className="px-3 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
+                className="flex-shrink-0 max-w-[140px] px-2 py-1.5 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
                 style={{ fontSize: 'var(--text-sm)' }}
               >
                 <option value="ALL">All channels</option>
@@ -138,13 +120,28 @@ export default function Signals() {
                 ))}
               </select>
             )}
-
             <span
-              className="ml-auto text-[var(--text-muted)]"
+              className="flex-shrink-0 text-[var(--text-muted)]"
               style={{ fontSize: 'var(--text-xs)' }}
             >
-              {filtered.length} signal{filtered.length !== 1 ? 's' : ''}
+              {filtered.length}
             </span>
+          </div>
+
+          {/* Row 2: direction + status pills — horizontally scrollable */}
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            {(['ALL', 'BUY', 'SELL'] as Direction[]).map((d) => (
+              <FilterBtn key={d} label={d} active={direction === d} onClick={() => setDirection(d)} />
+            ))}
+            <div className="w-px flex-shrink-0 mx-0.5" style={{ background: 'var(--border)' }} />
+            {(['ALL', 'active', 'win', 'loss', 'expired', 'pending'] as Status[]).map((s) => (
+              <FilterBtn
+                key={s}
+                label={s === 'ALL' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                active={status === s}
+                onClick={() => setStatus(s)}
+              />
+            ))}
           </div>
         </div>
 

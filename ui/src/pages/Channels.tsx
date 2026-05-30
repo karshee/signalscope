@@ -57,7 +57,7 @@ export default function Channels() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header row */}
         <div className="flex items-center justify-between mb-6">
           <div>

@@ -53,4 +53,7 @@ if _UI_DIST.exists():
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str, request: Request):
-        return FileResponse(str(_UI_DIST / "index.html"))
+        return FileResponse(
+            str(_UI_DIST / "index.html"),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )

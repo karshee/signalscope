@@ -24,7 +24,12 @@ function getStrength(pw: string): { label: string; score: number; color: string 
 
 export default function Register() {
   const navigate = useNavigate()
-  const { setAuth } = useAuthStore()
+  const { setAuth, isAuthenticated } = useAuthStore()
+
+  if (isAuthenticated) {
+    navigate('/app/dashboard', { replace: true })
+    return null
+  }
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

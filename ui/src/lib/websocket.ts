@@ -10,7 +10,8 @@ export function useSignalFeed(onMessage: (msg: unknown) => void) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws/feed?token=${token}`)
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const ws = new WebSocket(`${proto}://${window.location.host}/ws/feed?token=${token}`)
     wsRef.current = ws
 
     ws.onopen = () => {

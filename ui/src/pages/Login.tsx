@@ -9,7 +9,12 @@ import { useAuthStore } from '../lib/auth'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setAuth } = useAuthStore()
+  const { setAuth, isAuthenticated } = useAuthStore()
+
+  if (isAuthenticated) {
+    navigate('/app/dashboard', { replace: true })
+    return null
+  }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)

@@ -13,9 +13,10 @@ const navItems = [
 
 interface SidebarProps {
   collapsed?: boolean
+  onClose?: () => void
 }
 
-export function Sidebar({ collapsed = false }: SidebarProps) {
+export function Sidebar({ collapsed = false, onClose }: SidebarProps) {
   const { user, clearAuth } = useAuthStore()
   const navigate = useNavigate()
 
@@ -69,6 +70,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
           <NavLink
             key={to}
             to={to}
+            onClick={onClose}
             className={({ isActive }) =>
               clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-all duration-150 relative',

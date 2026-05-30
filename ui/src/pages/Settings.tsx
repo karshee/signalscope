@@ -37,23 +37,57 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ── Account Tab ───────────────────────────────────────────────────────────────
 
 function AccountTab() {
-  const { user, clearAuth } = useAuthStore()
+  const { user, setAuth, clearAuth } = useAuthStore()
   const { toast } = useToast()
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
   const [saving, setSaving] = useState(false)
+  const [currentPw, setCurrentPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [changingPw, setChangingPw] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      await api.settings.update({ name, email })
+      const res = await api.auth.updateProfile({ name, email })
+      setAuth(res.data, localStorage.getItem('token') || '')
       toast('Profile updated', 'success')
-    } catch {
-      toast('Failed to update profile', 'error')
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Failed to update profile'
+      toast(typeof msg === 'string' ? msg : 'Failed to update profile', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (newPw.length < 8) { toast('New password must be at least 8 characters', 'error'); return }
+    if (newPw !== confirmPw) { toast('Passwords do not match', 'error'); return }
+    setChangingPw(true)
+    try {
+      await api.auth.changePassword(currentPw, newPw)
+      toast('Password updated', 'success')
+      setCurrentPw(''); setNewPw(''); setConfirmPw('')
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Failed to change password'
+      toast(typeof msg === 'string' ? msg : 'Failed to change password', 'error')
+    } finally {
+      setChangingPw(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await api.auth.deleteAccount()
+      clearAuth()
+    } catch {
+      toast('Failed to delete account. Try again.', 'error')
+      setDeleting(false)
     }
   }
 
@@ -71,10 +105,10 @@ function AccountTab() {
 
       <Section title="Change Password">
         <div className="flex flex-col gap-4">
-          <Input label="Current password" type="password" placeholder="••••••••" />
-          <Input label="New password" type="password" placeholder="Min. 8 characters" />
-          <Input label="Confirm new password" type="password" placeholder="Repeat new password" />
-          <Button variant="ghost" className="self-start">
+          <Input label="Current password" type="password" placeholder="••••••••" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+          <Input label="New password" type="password" placeholder="Min. 8 characters" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          <Input label="Confirm new password" type="password" placeholder="Repeat new password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+          <Button onClick={handleChangePassword} loading={changingPw} className="self-start">
             Update Password
           </Button>
         </div>
@@ -107,7 +141,8 @@ function AccountTab() {
                   variant="danger"
                   size="sm"
                   disabled={deleteInput !== 'DELETE'}
-                  onClick={() => { clearAuth() }}
+                  loading={deleting}
+                  onClick={handleDelete}
                 >
                   Confirm Delete
                 </Button>
@@ -499,7 +534,7 @@ export default function Settings() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-4xl mx-auto">
         {/* Tab nav */}
         <div className="flex gap-1 mb-8 border-b border-[var(--border)]">
           {tabs.map((t) => (

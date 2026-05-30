@@ -109,7 +109,10 @@ export default function Dashboard() {
           api.scores.leaderboard({ window: '30d', min_signals: 5 }),
           api.channels.list(),
         ])
-        if (sigRes.status === 'fulfilled') setSignals(sigRes.value.data)
+        if (sigRes.status === 'fulfilled') {
+          const data = sigRes.value.data
+          setSignals(Array.isArray(data) ? data : [])
+        }
         if (statsRes.status === 'fulfilled') {
           const s = statsRes.value.data
           setStats((prev) => ({ ...prev, totalToday: s.total_today, active: s.active }))
@@ -131,7 +134,7 @@ export default function Dashboard() {
 
   return (
     <AppShell connected={connected}>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Stats row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -169,6 +172,42 @@ export default function Dashboard() {
             loading={statsLoading}
           />
         </div>
+
+        {/* Onboarding banner — shown when user has no channels yet */}
+        {!statsLoading && stats.channelCount === 0 && (
+          <div
+            className="rounded-[var(--radius-lg)] border border-[var(--border)] p-8 text-center mb-6"
+            style={{ background: 'var(--surface)' }}
+          >
+            <div
+              className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center mx-auto mb-4 text-[var(--accent)]"
+              style={{ background: 'var(--accent-dim)' }}
+            >
+              <Radio className="w-7 h-7" />
+            </div>
+            <h2 className="font-bold text-[var(--text)] mb-2" style={{ fontSize: 'var(--text-xl)' }}>
+              Welcome to Tapwire
+            </h2>
+            <p
+              className="text-[var(--text-muted)] max-w-sm mx-auto mb-6"
+              style={{ fontSize: 'var(--text-sm)' }}
+            >
+              Add a Telegram signal channel to start tracking win rates, entry accuracy, and live signals in real time.
+            </p>
+            <Link
+              to="/app/channels"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] font-medium transition-opacity hover:opacity-90"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--text-inverse)',
+                fontSize: 'var(--text-sm)',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Add your first channel
+            </Link>
+          </div>
+        )}
 
         {/* Main grid */}
         <div className="grid lg:grid-cols-5 gap-6">

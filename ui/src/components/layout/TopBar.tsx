@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../lib/auth'
 
@@ -12,9 +12,10 @@ const routeTitles: Record<string, string> = {
 
 interface TopBarProps {
   connected?: boolean
+  onMenuClick?: () => void
 }
 
-export function TopBar({ connected = false }: TopBarProps) {
+export function TopBar({ connected = false, onMenuClick }: TopBarProps) {
   const location = useLocation()
   const { user } = useAuthStore()
 
@@ -33,14 +34,23 @@ export function TopBar({ connected = false }: TopBarProps) {
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--surface)] flex-shrink-0"
+      className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[var(--border)] bg-[var(--surface)] flex-shrink-0"
     >
-      <h1
-        className="font-semibold text-[var(--text)]"
-        style={{ fontSize: 'var(--text-lg)' }}
-      >
-        {title}
-      </h1>
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] rounded-[var(--radius-md)] transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <h1
+          className="font-semibold text-[var(--text)]"
+          style={{ fontSize: 'var(--text-lg)' }}
+        >
+          {title}
+        </h1>
+      </div>
 
       <div className="flex items-center gap-4">
         {/* Watcher status */}

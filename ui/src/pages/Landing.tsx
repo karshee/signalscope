@@ -243,7 +243,7 @@ function Hero() {
           margin: '0 auto',
           padding: '0 24px',
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '48px',
           alignItems: 'center',
         }}
@@ -452,7 +452,7 @@ function UseCases() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: '16px',
           }}
         >
@@ -552,8 +552,8 @@ function HowItWorks() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '40px 0',
             position: 'relative',
           }}
         >
@@ -994,7 +994,7 @@ function Pricing() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {tiers.map((tier) => (
             <div
               key={tier.name}
@@ -1144,7 +1144,7 @@ function Testimonials() {
             Traders who stopped guessing
           </h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {quotes.map((q) => (
             <div
               key={q.name}

@@ -49,7 +49,10 @@ export default function ChannelDetail() {
           api.scores.channel(id),
         ])
         if (chRes.status === 'fulfilled') setChannel(chRes.value.data)
-        if (sigRes.status === 'fulfilled') setSignals(sigRes.value.data)
+        if (sigRes.status === 'fulfilled') {
+          const data = sigRes.value.data
+          setSignals(Array.isArray(data) ? data : [])
+        }
         if (scoreRes.status === 'fulfilled') setScore(scoreRes.value.data)
       } finally {
         setLoading(false)

@@ -10,11 +10,28 @@ interface AppShellProps {
 
 export function AppShell({ children, connected = false }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg)]">
-      {/* Sidebar */}
-      <Sidebar collapsed={collapsed} />
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — desktop always visible, mobile slide-in drawer */}
+      <div
+        className={`
+          fixed inset-y-0 left-0 z-30 lg:static lg:z-auto
+          transition-transform duration-300
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        <Sidebar collapsed={collapsed} onClose={() => setMobileOpen(false)} />
+      </div>
 
       {/* Main column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -27,7 +44,7 @@ export function AppShell({ children, connected = false }: AppShellProps) {
             {collapsed ? <PanelLeftOpen className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}
           </button>
         </div>
-        <TopBar connected={connected} />
+        <TopBar connected={connected} onMenuClick={() => setMobileOpen((o) => !o)} />
         <main className="flex-1 overflow-y-auto bg-[var(--bg)] page-enter">
           {children}
         </main>

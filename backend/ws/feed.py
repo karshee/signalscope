@@ -12,13 +12,11 @@ async def websocket_feed(
     websocket: WebSocket,
     token: str = Query(...),
 ):
-    # Authenticate via token query param
     user_id = decode_token(token)
     if user_id is None:
         await websocket.close(code=4003)
         return
 
-    # Verify user exists
     async with get_db() as db:
         async with db.execute(
             "SELECT id FROM users WHERE id = ?", (user_id,)
@@ -29,10 +27,9 @@ async def websocket_feed(
         await websocket.close(code=4003)
         return
 
-    await manager.connect(websocket)
+    await manager.connect(websocket, user_id)
 
     try:
-        # Send last 20 signals as init payload
         async with get_db() as db:
             async with db.execute(
                 """
@@ -41,7 +38,7 @@ async def websocket_feed(
                     s.entry_price, s.stop_loss, s.tp1, s.tp2, s.tp3,
                     s.signal_type, s.parse_confidence, s.posted_at,
                     s.raw_text,
-                    o.status as outcome_status,
+                    o.status as status,
                     o.pips_result, o.rr_result,
                     c.title as channel_title,
                     c.username as channel_username
@@ -59,14 +56,12 @@ async def websocket_feed(
         init_signals = [dict(r) for r in rows]
         await websocket.send_json({"type": "init", "signals": init_signals})
 
-        # Keep alive — wait for client messages or disconnect
         while True:
             data = await websocket.receive_text()
-            # Optionally handle ping/pong or subscription messages here
             if data == "ping":
                 await websocket.send_json({"type": "pong"})
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, user_id)
     except Exception:
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, user_id)

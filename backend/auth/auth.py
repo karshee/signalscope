@@ -7,7 +7,13 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
+_raw_secret = os.getenv("SECRET_KEY", "")
+if not _raw_secret or _raw_secret in ("dev-secret-change-in-production", "change-me-in-production-use-openssl-rand-hex-32"):
+    raise RuntimeError(
+        "SECRET_KEY environment variable must be set to a strong random value. "
+        "Generate one with: openssl rand -hex 32"
+    )
+SECRET_KEY: str = _raw_secret
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_DAYS = 7

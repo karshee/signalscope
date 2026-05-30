@@ -104,6 +104,17 @@ async def run_migrations():
             )
         """)
 
+        # Indexes for FK lookups and range queries
+        await db.executescript("""
+            CREATE INDEX IF NOT EXISTS idx_channels_user_id ON channels(user_id);
+            CREATE INDEX IF NOT EXISTS idx_signals_channel_id ON signals(channel_id);
+            CREATE INDEX IF NOT EXISTS idx_signals_posted_at ON signals(posted_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_signals_pair ON signals(pair);
+            CREATE INDEX IF NOT EXISTS idx_outcomes_signal_id ON outcomes(signal_id);
+            CREATE INDEX IF NOT EXISTS idx_channel_scores_channel_id ON channel_scores(channel_id);
+            CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+        """)
+
         await db.commit()
 
         # Incremental migrations — safe to run on existing databases

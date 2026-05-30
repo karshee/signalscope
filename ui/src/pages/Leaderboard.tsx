@@ -91,7 +91,7 @@ export default function Leaderboard() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-5xl mx-auto">
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
           <div className="flex items-center gap-1">
@@ -125,10 +125,10 @@ export default function Leaderboard() {
           />
         ) : (
           <div
-            className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
+            className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden overflow-x-auto"
             style={{ background: 'var(--surface)' }}
           >
-            <table className="w-full border-collapse" style={{ fontSize: 'var(--text-sm)' }}>
+            <table className="w-full min-w-[640px] border-collapse" style={{ fontSize: 'var(--text-sm)' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   <th className="text-left px-4 py-3 w-12 font-medium" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>#</th>

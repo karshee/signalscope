@@ -69,11 +69,40 @@ async def update_settings(
 
 @router.post("/telegram/test")
 async def test_telegram(current_user: dict = Depends(get_current_user)):
-    """Test Telegram connection (stub)."""
-    return {"connected": False, "message": "Telegram not configured"}
+    """Test Telegram connection using server-configured credentials."""
+    import os
+    from backend.services.watcher_service import get_watcher_service
+
+    svc = get_watcher_service()
+    if svc.status == "running":
+        return {"connected": True, "message": "Watcher is running"}
+
+    api_id_str = os.getenv("TELEGRAM_API_ID", "")
+    api_hash = os.getenv("TELEGRAM_API_HASH", "")
+    session = os.getenv("TELEGRAM_SESSION", "")
+
+    if not all([api_id_str, api_hash, session]):
+        return {
+            "connected": False,
+            "message": "TELEGRAM_API_ID / TELEGRAM_API_HASH / TELEGRAM_SESSION not configured on server",
+        }
+
+    try:
+        from watcher.client import TapwireClient
+        client = TapwireClient(int(api_id_str), api_hash, session)
+        ok = await client.connect()
+        await client.disconnect()
+        if ok:
+            return {"connected": True, "message": "Credentials valid"}
+        return {
+            "connected": False,
+            "message": "Session invalid or expired — regenerate TELEGRAM_SESSION",
+        }
+    except Exception as e:
+        return {"connected": False, "message": str(e)}
 
 
 @router.post("/mt5/test")
 async def test_mt5(current_user: dict = Depends(get_current_user)):
-    """Test MT5 connection (stub)."""
-    return {"connected": False, "message": "MT5 not configured"}
+    """MT5 integration — not yet implemented."""
+    return {"connected": False, "message": "MT5 integration coming soon"}

@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button'
 import { useAuthStore } from '../lib/auth'
 import { api } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
-import { CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle, AlertCircle } from 'lucide-react'
 
 type Tab = 'account' | 'telegram' | 'mt5' | 'notifications' | 'billing'
 
@@ -160,87 +160,100 @@ function AccountTab() {
 
 // ── Telegram Tab ──────────────────────────────────────────────────────────────
 
+type WatcherStatus = 'running' | 'unconfigured' | 'starting' | 'error' | 'stopped' | null
+
 function TelegramTab() {
   const { toast } = useToast()
-  const [apiId, setApiId] = useState('')
-  const [apiHash, setApiHash] = useState('')
-  const [phone, setPhone] = useState('')
-  const [showHash, setShowHash] = useState(false)
+  const [watcherStatus, setWatcherStatus] = useState<WatcherStatus>(null)
+  const [watcherError, setWatcherError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState(true)
+
+  useEffect(() => {
+    api.admin.status()
+      .then((res) => {
+        setWatcherStatus(res.data.watcher_status as WatcherStatus)
+        setWatcherError(res.data.watcher_error || null)
+      })
+      .catch(() => setWatcherStatus('stopped'))
+      .finally(() => setLoadingStatus(false))
+  }, [])
 
   const handleTest = async () => {
     setTesting(true)
-    setTestResult(null)
     try {
-      await api.settings.testTelegram()
-      setTestResult('ok')
-      toast('Telegram connection OK', 'success')
+      const res = await api.settings.testTelegram()
+      if (res.data.connected) {
+        setWatcherStatus('running')
+        toast(res.data.message || 'Telegram connection OK', 'success')
+      } else {
+        toast(res.data.message || 'Connection failed', 'error')
+      }
     } catch {
-      setTestResult('fail')
-      toast('Telegram connection failed', 'error')
+      toast('Test request failed', 'error')
     } finally {
       setTesting(false)
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await api.settings.update({ telegram: { api_id: apiId, api_hash: apiHash, phone } })
-      toast('Telegram credentials saved', 'success')
-    } catch {
-      toast('Failed to save credentials', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const dotClass = watcherStatus === 'running'
+    ? 'bg-[var(--win)]'
+    : watcherStatus === 'error'
+      ? 'bg-[var(--loss)]'
+      : watcherStatus === 'starting'
+        ? 'bg-yellow-400'
+        : 'bg-[var(--expired)]'
+
+  const statusLabel = watcherStatus === 'running'
+    ? 'Watcher running — signals are being collected'
+    : watcherStatus === 'starting'
+      ? 'Watcher starting…'
+      : watcherStatus === 'error'
+        ? `Error: ${watcherError || 'unknown'}`
+        : watcherStatus === 'unconfigured'
+          ? 'Not configured — set TELEGRAM_* env vars on the server'
+          : loadingStatus
+            ? 'Checking…'
+            : 'Stopped'
 
   return (
     <div className="flex flex-col gap-6 max-w-lg">
-      <Section title="Telegram Connection">
+      <Section title="Watcher Status">
         <div className="flex items-center gap-2 mb-5 p-3 rounded-[var(--radius-md)]"
           style={{ background: 'var(--surface-2)' }}>
-          <span className={clsx('w-2 h-2 rounded-full', testResult === 'ok' ? 'bg-[var(--win)]' : testResult === 'fail' ? 'bg-[var(--loss)]' : 'bg-[var(--expired)]')} />
+          <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', dotClass)} />
           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-            {testResult === 'ok' ? 'Connected' : testResult === 'fail' ? 'Connection failed' : 'Not configured'}
+            {statusLabel}
           </span>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <Input label="API ID" value={apiId} onChange={(e) => setApiId(e.target.value)} placeholder="12345678" />
+        <Button variant="ghost" onClick={handleTest} loading={testing} className="mb-5">
+          {watcherStatus === 'running'
+            ? <><CheckCircle className="w-4 h-4 text-[var(--win)]" />&nbsp;Re-test Connection</>
+            : <><AlertCircle className="w-4 h-4" />&nbsp;Test Connection</>
+          }
+        </Button>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[var(--text-muted)] font-medium" style={{ fontSize: 'var(--text-sm)' }}>
-              API Hash
-            </label>
-            <div className="relative">
-              <input
-                type={showHash ? 'text' : 'password'}
-                value={apiHash}
-                onChange={(e) => setApiHash(e.target.value)}
-                placeholder="••••••••••••••••••••••••••••••••"
-                className="w-full px-3 py-2.5 pr-10 rounded-[var(--radius-md)] border text-[var(--text)] placeholder-[var(--text-faint)] outline-none transition-all bg-[var(--surface-2)] border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-dim)]"
-                style={{ fontSize: 'var(--text-base)', fontFamily: 'var(--font-mono)' }}
-              />
-              <button type="button" onClick={() => setShowHash((s) => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-                {showHash ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <Input label="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+447700900123" />
-
-          <div className="flex gap-2 pt-1">
-            <Button onClick={handleSave} loading={saving}>Save</Button>
-            <Button variant="ghost" onClick={handleTest} loading={testing}>
-              {testResult === 'ok' && <CheckCircle className="w-4 h-4 text-[var(--win)]" />}
-              {testResult === 'fail' && <AlertCircle className="w-4 h-4 text-[var(--loss)]" />}
-              Test Connection
-            </Button>
-          </div>
+        <div
+          className="rounded-[var(--radius-md)] border border-[var(--border)] p-4"
+          style={{ background: 'var(--surface-2)' }}
+        >
+          <p className="font-medium text-[var(--text)] mb-2" style={{ fontSize: 'var(--text-sm)' }}>
+            Server configuration
+          </p>
+          <p className="mb-2" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+            Telegram credentials are loaded from server environment variables.
+            Set these in your <code className="font-mono">.env</code> file or deployment config:
+          </p>
+          <ul className="list-disc list-inside space-y-1 font-mono mb-2"
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            <li>TELEGRAM_API_ID</li>
+            <li>TELEGRAM_API_HASH</li>
+            <li>TELEGRAM_SESSION</li>
+          </ul>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+            See <code className="font-mono">.env.example</code> for how to generate a session string.
+          </p>
         </div>
       </Section>
     </div>

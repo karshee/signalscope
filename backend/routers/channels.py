@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 import uuid
@@ -12,6 +13,14 @@ from backend.db.database import get_db
 router = APIRouter(prefix="/api/channels", tags=["channels"])
 
 _DEFAULT_WATCH_CONFIG = {"extractors": ["signal", "sentiment", "mention"]}
+
+
+def _schedule_watcher_reload():
+    """Fire-and-forget: tell the watcher to re-read channel list from DB."""
+    from backend.services.watcher_service import get_watcher_service
+    svc = get_watcher_service()
+    if svc.status == "running":
+        asyncio.create_task(svc.reload_channels())
 
 
 class ChannelCreate(BaseModel):
@@ -78,6 +87,7 @@ async def add_channel(
         )
         await db.commit()
 
+    _schedule_watcher_reload()
     return {"id": channel_id, "title": channel_in.title, "added_at": now, "watch_config": channel_in.watch_config or _DEFAULT_WATCH_CONFIG}
 
 
@@ -131,6 +141,7 @@ async def update_channel(
             )
             await db.commit()
 
+    _schedule_watcher_reload()
     return {"id": channel_id, "updated": list(updates.keys())}
 
 
@@ -166,3 +177,5 @@ async def delete_channel(
         )
         await db.execute("DELETE FROM channels WHERE id = ?", (channel_id,))
         await db.commit()
+
+    _schedule_watcher_reload()

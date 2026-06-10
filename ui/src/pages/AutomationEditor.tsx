@@ -85,10 +85,11 @@ function newNodeId() {
 }
 
 function hydrateNodes(graphNodes: RuleNode[]): AutomationFlowNode[] {
-  return graphNodes.map((n) => ({
+  // Rules created via the raw API may omit positions — lay them out in a row
+  return graphNodes.map((n, i) => ({
     id: n.id,
     type: n.type,
-    position: n.position,
+    position: n.position ?? { x: 60 + i * 260, y: 120 },
     data: { nodeType: n.data.nodeType, config: n.data.config ?? {} },
   }))
 }

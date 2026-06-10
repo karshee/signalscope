@@ -4,7 +4,7 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -169,6 +169,10 @@ if _UI_DIST.exists():
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str, request: Request):
+        # The catch-all would otherwise swallow unmatched API paths (e.g. a
+        # missing trailing slash) and return HTML to JSON clients.
+        if full_path.startswith(("api/", "ws/")):
+            raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(
             str(_UI_DIST / "index.html"),
             headers={"Cache-Control": "no-cache, no-store, must-revalidate"},

@@ -192,30 +192,30 @@ export const api = {
     deleteAccount: () => client.delete('/api/auth/me'),
   },
   channels: {
-    list: () => client.get<Channel[]>('/api/channels'),
+    list: () => client.get<Channel[]>('/api/channels/'),
     get: (id: string) => client.get<Channel>(`/api/channels/${id}`),
     create: (data: { username: string; title: string; telegram_id?: number }) =>
-      client.post<Channel>('/api/channels', data),
+      client.post<Channel>('/api/channels/', data),
     update: (id: string, data: Partial<Channel>) =>
       client.put<Channel>(`/api/channels/${id}`, data),
     delete: (id: string) => client.delete(`/api/channels/${id}`),
   },
   signals: {
     list: (params?: { channel_id?: string; limit?: number; offset?: number }) =>
-      client.get<Signal[]>('/api/signals', { params }),
+      client.get<Signal[]>('/api/signals/', { params }),
     get: (id: string) => client.get<Signal>(`/api/signals/${id}`),
     statsToday: () =>
       client.get<{ total_today: number; active: number }>('/api/signals/stats/today'),
   },
   scores: {
-    list: () => client.get<ChannelScore[]>('/api/scores'),
+    list: () => client.get<ChannelScore[]>('/api/scores/'),
     leaderboard: (params?: { window?: string; min_signals?: number }) =>
       client.get<LeaderboardEntry[]>('/api/scores/leaderboard', { params }),
     channel: (id: string) => client.get<ChannelScore>(`/api/scores/channel/${id}`),
   },
   settings: {
-    get: () => client.get('/api/settings'),
-    update: (data: Record<string, unknown>) => client.put('/api/settings', data),
+    get: () => client.get('/api/settings/'),
+    update: (data: Record<string, unknown>) => client.put('/api/settings/', data),
     testTelegram: () =>
       client.post<{ connected: boolean; message: string }>('/api/settings/telegram/test'),
     testBot: () =>
@@ -226,9 +226,9 @@ export const api = {
       client.post<{ connected: boolean; message: string }>('/api/settings/mt5/test'),
   },
   templates: {
-    list: () => client.get<Template[]>('/api/templates'),
+    list: () => client.get<Template[]>('/api/templates/'),
     get: (id: string) => client.get<Template>(`/api/templates/${id}`),
-    create: (data: Partial<Template>) => client.post<Template>('/api/templates', data),
+    create: (data: Partial<Template>) => client.post<Template>('/api/templates/', data),
     update: (id: string, data: Partial<Template>) =>
       client.put(`/api/templates/${id}`, data),
     delete: (id: string) => client.delete(`/api/templates/${id}`),
@@ -238,10 +238,10 @@ export const api = {
       ),
   },
   rules: {
-    list: () => client.get<Rule[]>('/api/rules'),
+    list: () => client.get<Rule[]>('/api/rules/'),
     get: (id: string) => client.get<Rule>(`/api/rules/${id}`),
     create: (data: { name: string; description?: string; graph: RuleGraph; is_enabled?: boolean; rate_limit_per_min?: number }) =>
-      client.post<{ id: string; trigger_type: string }>('/api/rules', data),
+      client.post<{ id: string; trigger_type: string }>('/api/rules/', data),
     update: (id: string, data: { name: string; description?: string; graph: RuleGraph; is_enabled?: boolean; rate_limit_per_min?: number }) =>
       client.put(`/api/rules/${id}`, data),
     delete: (id: string) => client.delete(`/api/rules/${id}`),
@@ -254,7 +254,7 @@ export const api = {
   },
   executions: {
     list: (params?: { rule_id?: string; status?: string; limit?: number; offset?: number }) =>
-      client.get<Execution[]>('/api/executions', { params }),
+      client.get<Execution[]>('/api/executions/', { params }),
     stats: () =>
       client.get<{
         total_24h: number; success_24h: number; errors_24h: number
@@ -262,17 +262,17 @@ export const api = {
       }>('/api/executions/stats'),
   },
   webhooks: {
-    list: () => client.get<WebhookToken[]>('/api/webhooks'),
-    create: (name: string) => client.post<WebhookToken>('/api/webhooks', { name }),
+    list: () => client.get<WebhookToken[]>('/api/webhooks/'),
+    create: (name: string) => client.post<WebhookToken>('/api/webhooks/', { name }),
     rotate: (id: string) => client.post<{ id: string; token: string }>(`/api/webhooks/${id}/rotate`),
     delete: (id: string) => client.delete(`/api/webhooks/${id}`),
   },
   media: {
-    list: () => client.get<MediaAsset[]>('/api/media'),
+    list: () => client.get<MediaAsset[]>('/api/media/'),
     upload: (file: File) => {
       const form = new FormData()
       form.append('file', file)
-      return client.post<MediaAsset>('/api/media', form)
+      return client.post<MediaAsset>('/api/media/', form)
     },
     fileUrl: (id: string) =>
       `/api/media/${id}/file?token=${localStorage.getItem('token') ?? ''}`,

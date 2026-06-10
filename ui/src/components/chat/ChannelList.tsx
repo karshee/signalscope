@@ -99,7 +99,7 @@ export function ChannelList({ channels, activeId, snippets, loading, onSelect, o
                     )}
                   </div>
                   <div className="truncate text-[var(--text-muted)]" style={{ fontSize: 'var(--text-xs)' }}>
-                    {snippet?.text || `@${ch.username}`}
+                    {snippet?.text || (ch.username ? `@${ch.username}` : 'No messages yet')}
                   </div>
                 </div>
               </button>

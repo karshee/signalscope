@@ -3,13 +3,28 @@ import time
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
 
-from backend.auth.auth import get_current_user
+from backend.auth.auth import get_current_user, decode_token
 from backend.db.database import get_db
 
 router = APIRouter(prefix="/api/media", tags=["media"])
+
+
+async def get_current_user_or_query_token(request: Request) -> dict:
+    """Auth via Bearer header, falling back to ?token= (for <img src> previews)."""
+    auth = request.headers.get("authorization", "")
+    token = auth[7:] if auth.lower().startswith("bearer ") else request.query_params.get("token")
+    user_id = decode_token(token) if token else None
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    async with get_db() as db:
+        async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
+            row = await cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return dict(row)
 
 _MAX_BYTES = 10 * 1024 * 1024
 _ALLOWED = {
@@ -68,7 +83,12 @@ async def upload_media(file: UploadFile, current_user: dict = Depends(get_curren
 
 
 @router.get("/{media_id}/file")
-async def serve_media(media_id: str, current_user: dict = Depends(get_current_user)):
+async def serve_media(
+    media_id: str,
+    token: str | None = None,
+    current_user: dict = Depends(get_current_user_or_query_token),
+):
+    """Owner-checked file serve. Accepts ?token= so <img> tags can load previews."""
     async with get_db() as db:
         async with db.execute(
             "SELECT path, mime FROM media_assets WHERE id = ? AND user_id = ?",

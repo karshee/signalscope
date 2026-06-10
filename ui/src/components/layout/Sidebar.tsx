@@ -1,13 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Radio, Zap, Trophy, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Radio, FileText, Workflow, Settings, LogOut } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuthStore } from '../../lib/auth'
 
 const navItems = [
   { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/app/channels', icon: Radio, label: 'Channels' },
-  { to: '/app/signals', icon: Zap, label: 'Live Feed' },
-  { to: '/app/leaderboard', icon: Trophy, label: 'Leaderboard' },
+  { to: '/app/templates', icon: FileText, label: 'Templates' },
+  { to: '/app/automations', icon: Workflow, label: 'Automations' },
   { to: '/app/settings', icon: Settings, label: 'Settings' },
 ]
 

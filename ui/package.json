@@ -9,15 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.11.0",
+    "axios": "^1.7.7",
+    "chart.js": "^4.4.4",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.454.0",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
-    "axios": "^1.7.7",
-    "zustand": "^5.0.0",
-    "chart.js": "^4.4.4",
-    "react-chartjs-2": "^5.2.0",
-    "lucide-react": "^0.454.0",
-    "clsx": "^2.1.1"
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.11",

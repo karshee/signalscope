@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from './lib/auth'
 import Landing from './pages/Landing'
@@ -6,9 +7,12 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Channels from './pages/Channels'
 import ChannelDetail from './pages/ChannelDetail'
-import Signals from './pages/Signals'
-import Leaderboard from './pages/Leaderboard'
+import Templates from './pages/Templates'
+import Automations from './pages/Automations'
 import Settings from './pages/Settings'
+
+// React Flow is heavy — load the editor only when someone opens it
+const AutomationEditor = lazy(() => import('./pages/AutomationEditor'))
 
 function ProtectedRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -16,6 +20,14 @@ function ProtectedRoute() {
     return <Navigate to="/login" replace />
   }
   return <Outlet />
+}
+
+function EditorFallback() {
+  return (
+    <div className="flex items-center justify-center h-64 text-[var(--text-muted)]">
+      Loading editor…
+    </div>
+  )
 }
 
 export const router = createBrowserRouter([
@@ -30,8 +42,24 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'channels', element: <Channels /> },
       { path: 'channels/:id', element: <ChannelDetail /> },
-      { path: 'signals', element: <Signals /> },
-      { path: 'leaderboard', element: <Leaderboard /> },
+      { path: 'templates', element: <Templates /> },
+      { path: 'automations', element: <Automations /> },
+      {
+        path: 'automations/new',
+        element: (
+          <Suspense fallback={<EditorFallback />}>
+            <AutomationEditor />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'automations/:id',
+        element: (
+          <Suspense fallback={<EditorFallback />}>
+            <AutomationEditor />
+          </Suspense>
+        ),
+      },
       { path: 'settings', element: <Settings /> },
     ],
   },

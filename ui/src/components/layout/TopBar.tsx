@@ -5,8 +5,8 @@ import { useAuthStore } from '../../lib/auth'
 const routeTitles: Record<string, string> = {
   '/app/dashboard': 'Dashboard',
   '/app/channels': 'Channels',
-  '/app/signals': 'Live Feed',
-  '/app/leaderboard': 'Leaderboard',
+  '/app/templates': 'Templates',
+  '/app/automations': 'Automations',
   '/app/settings': 'Settings',
 }
 

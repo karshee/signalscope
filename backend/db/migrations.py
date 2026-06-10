@@ -104,6 +104,110 @@ async def run_migrations():
             )
         """)
 
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS message_templates (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                body TEXT NOT NULL DEFAULT '',
+                parse_mode TEXT DEFAULT 'HTML',
+                media_id TEXT,
+                media_url TEXT,
+                created_at REAL,
+                updated_at REAL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS media_assets (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                filename TEXT,
+                mime TEXT,
+                size_bytes INTEGER,
+                path TEXT NOT NULL,
+                telegram_file_id TEXT,
+                created_at REAL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS automation_rules (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                is_enabled INTEGER DEFAULT 1,
+                graph_json TEXT NOT NULL,
+                compiled_json TEXT NOT NULL,
+                trigger_type TEXT NOT NULL,
+                rate_limit_per_min INTEGER DEFAULT 10,
+                last_fired_at REAL,
+                created_at REAL,
+                updated_at REAL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS rule_executions (
+                id TEXT PRIMARY KEY,
+                rule_id TEXT NOT NULL,
+                event_id TEXT,
+                event_type TEXT,
+                status TEXT NOT NULL,
+                detail TEXT,
+                duration_ms REAL,
+                created_at REAL,
+                FOREIGN KEY (rule_id) REFERENCES automation_rules(id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS webhook_tokens (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                last_used_at REAL,
+                created_at REAL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS sent_messages (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                rule_id TEXT,
+                chat_id TEXT NOT NULL,
+                telegram_message_id INTEGER,
+                template_id TEXT,
+                kind TEXT,
+                created_at REAL
+            )
+        """)
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS channel_messages (
+                id TEXT PRIMARY KEY,
+                channel_id TEXT NOT NULL,
+                message_id INTEGER NOT NULL,
+                sender_name TEXT,
+                text TEXT,
+                has_media INTEGER DEFAULT 0,
+                media_type TEXT,
+                posted_at REAL,
+                is_self_sent INTEGER DEFAULT 0,
+                UNIQUE(channel_id, message_id),
+                FOREIGN KEY (channel_id) REFERENCES channels(id)
+            )
+        """)
+
         # Indexes for FK lookups and range queries
         await db.executescript("""
             CREATE INDEX IF NOT EXISTS idx_channels_user_id ON channels(user_id);
@@ -113,6 +217,14 @@ async def run_migrations():
             CREATE INDEX IF NOT EXISTS idx_outcomes_signal_id ON outcomes(signal_id);
             CREATE INDEX IF NOT EXISTS idx_channel_scores_channel_id ON channel_scores(channel_id);
             CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+            CREATE INDEX IF NOT EXISTS idx_templates_user ON message_templates(user_id);
+            CREATE INDEX IF NOT EXISTS idx_media_user ON media_assets(user_id);
+            CREATE INDEX IF NOT EXISTS idx_rules_user ON automation_rules(user_id);
+            CREATE INDEX IF NOT EXISTS idx_rules_trigger ON automation_rules(trigger_type, is_enabled);
+            CREATE INDEX IF NOT EXISTS idx_exec_rule ON rule_executions(rule_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_exec_created ON rule_executions(created_at DESC);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_sent_chat_msg ON sent_messages(chat_id, telegram_message_id);
+            CREATE INDEX IF NOT EXISTS idx_chmsg_channel ON channel_messages(channel_id, posted_at DESC);
         """)
 
         await db.commit()

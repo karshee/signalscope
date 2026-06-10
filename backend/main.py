@@ -10,7 +10,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.db.migrations import run_migrations
-from backend.routers import auth, channels, signals, scores, settings, admin
+from backend.routers import (
+    auth, channels, signals, scores, settings, admin,
+    templates, rules, executions, webhooks, media, messages,
+)
 from backend.ws.feed import router as ws_router
 
 _UI_DIST = Path(__file__).parent.parent / "ui" / "dist"
@@ -142,6 +145,12 @@ app.include_router(signals.router)
 app.include_router(scores.router)
 app.include_router(settings.router)
 app.include_router(admin.router)
+app.include_router(templates.router)
+app.include_router(rules.router)
+app.include_router(executions.router)
+app.include_router(webhooks.router)
+app.include_router(media.router)
+app.include_router(messages.router)
 app.include_router(ws_router)
 
 

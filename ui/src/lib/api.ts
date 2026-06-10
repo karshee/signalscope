@@ -118,7 +118,19 @@ export const api = {
   settings: {
     get: () => client.get('/api/settings'),
     update: (data: Record<string, unknown>) => client.put('/api/settings', data),
-    testTelegram: () => client.post('/api/settings/telegram/test'),
-    testMt5: () => client.post('/api/settings/mt5/test'),
+    testTelegram: () =>
+      client.post<{ connected: boolean; message: string }>('/api/settings/telegram/test'),
+    testMt5: () =>
+      client.post<{ connected: boolean; message: string }>('/api/settings/mt5/test'),
+  },
+  admin: {
+    status: () =>
+      client.get<{
+        watcher_running: boolean
+        watcher_status: string
+        watcher_error: string | null
+        signal_count: number
+        channel_count: number
+      }>('/api/admin/status'),
   },
 }

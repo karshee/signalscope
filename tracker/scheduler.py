@@ -1,5 +1,4 @@
-"""APScheduler background scheduler for outcome checks."""
-import asyncio
+"""APScheduler background jobs: outcome checks (5 min) and channel scoring (1 hr)."""
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -10,6 +9,7 @@ _scheduler: AsyncIOScheduler = None
 def start_outcome_scheduler(db_factory, broadcast_fn=None):
     global _scheduler
     from tracker.outcome_engine import run_outcome_checks
+    from scorer.channel_scorer import score_all_channels
 
     _scheduler = AsyncIOScheduler()
     _scheduler.add_job(
@@ -20,11 +20,20 @@ def start_outcome_scheduler(db_factory, broadcast_fn=None):
         id="outcome_checks",
         replace_existing=True,
     )
+    _scheduler.add_job(
+        score_all_channels,
+        "interval",
+        hours=1,
+        args=[db_factory],
+        id="score_channels",
+        replace_existing=True,
+    )
     _scheduler.start()
-    logger.info("Outcome scheduler started (every 5 min)")
+    logger.info("Scheduler started (outcome: 5 min, scoring: 1 hr)")
 
 
 def stop_outcome_scheduler():
     global _scheduler
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
+        logger.info("Scheduler stopped")

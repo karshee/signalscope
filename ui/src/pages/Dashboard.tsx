@@ -1,25 +1,94 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { TrendingUp, Zap, BarChart2, Radio, Plus } from 'lucide-react'
+import {
+  Zap,
+  Activity,
+  Send,
+  Radio,
+  Plus,
+  FileText,
+  AlertTriangle,
+  X,
+  Workflow,
+} from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
-import { SignalFeed } from '../components/signals/SignalFeed'
-import { SignalDetail } from '../components/signals/SignalDetail'
 import { SkeletonBlock, SkeletonLine } from '../components/ui/Skeleton'
-import { QualityBadge } from '../components/channels/QualityBadge'
-import { api, type Signal, type LeaderboardEntry } from '../lib/api'
+import { api, type Execution, type Rule } from '../lib/api'
 import { useSignalFeed } from '../lib/websocket'
 
-type QualityTier = 'S' | 'A' | 'B' | 'C' | 'D' | 'F'
-
-function isValidTier(t?: string): t is QualityTier {
-  return ['S', 'A', 'B', 'C', 'D', 'F'].includes(t || '')
+interface ExecStats {
+  total_24h: number
+  success_24h: number
+  errors_24h: number
+  active_rules: number
+  sent_7d: number
 }
 
-interface Stats {
-  totalToday: number
-  active: number
-  avgScore: number
-  channelCount: number
+interface RuleExecutionEvent {
+  id: string
+  rule_id: string
+  rule_name?: string
+  event_type: string
+  status: string
+  actions_run?: number
+  created_at: number
+}
+
+interface RuleDisabledAlert {
+  rule_id: string
+  name: string
+  reason: string
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  'message.received': 'Message',
+  'outcome.event': 'TP/SL',
+  'schedule.tick': 'Schedule',
+  'webhook.received': 'Webhook',
+}
+
+function eventLabel(eventType: string): string {
+  return EVENT_LABELS[eventType] ?? eventType
+}
+
+function statusColor(status: string): string {
+  switch (status) {
+    case 'success':
+      return 'var(--win)'
+    case 'error':
+    case 'rate_limited':
+      return 'var(--loss)'
+    case 'dry_run':
+      return 'var(--accent)'
+    default:
+      // condition_failed and anything unknown
+      return 'var(--text-faint)'
+  }
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case 'success':
+      return 'Ran'
+    case 'error':
+      return 'Error'
+    case 'rate_limited':
+      return 'Rate limited'
+    case 'condition_failed':
+      return 'Skipped'
+    case 'dry_run':
+      return 'Dry run'
+    default:
+      return status
+  }
+}
+
+function timeAgo(ts: number): string {
+  const diff = Math.max(0, Math.floor(Date.now() / 1000) - ts)
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
 }
 
 function StatCard({
@@ -52,8 +121,10 @@ function StatCard({
             <span className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
               {label}
             </span>
-            <div className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--accent)]"
-              style={{ background: 'var(--accent-dim)' }}>
+            <div
+              className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--accent)]"
+              style={{ background: 'var(--accent-dim)' }}
+            >
               {icon}
             </div>
           </div>
@@ -74,27 +145,61 @@ function StatCard({
   )
 }
 
+function QuickAction({
+  to,
+  icon,
+  label,
+}: {
+  to: string
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-hover)] hover:border-[var(--border-strong)] transition-colors"
+      style={{ fontSize: 'var(--text-sm)' }}
+    >
+      <span className="text-[var(--accent)]">{icon}</span>
+      {label}
+    </Link>
+  )
+}
+
 export default function Dashboard() {
-  const [signals, setSignals] = useState<Signal[]>([])
-  const [sigLoading, setSigLoading] = useState(true)
-  const [stats, setStats] = useState<Stats>({ totalToday: 0, active: 0, avgScore: 0, channelCount: 0 })
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [topChannels, setTopChannels] = useState<LeaderboardEntry[]>([])
-  const [selected, setSelected] = useState<Signal | null>(null)
+  const [stats, setStats] = useState<ExecStats | null>(null)
+  const [executions, setExecutions] = useState<Execution[]>([])
+  const [rules, setRules] = useState<Rule[]>([])
+  const [channelCount, setChannelCount] = useState(0)
+  const [loading, setLoading] = useState(true)
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
+  const [alerts, setAlerts] = useState<RuleDisabledAlert[]>([])
 
   const handleWsMessage = useCallback((msg: unknown) => {
-    const m = msg as { type?: string; signal?: Signal }
-    if (m.type === 'new_signal' && m.signal) {
-      setSignals((prev) => [m.signal!, ...prev.slice(0, 49)])
-      setNewIds((prev) => new Set([...prev, m.signal!.id]))
+    const m = msg as { type?: string; data?: unknown }
+    if (m.type === 'rule_execution' && m.data) {
+      const d = m.data as RuleExecutionEvent
+      const exec: Execution = {
+        id: d.id,
+        rule_id: d.rule_id,
+        rule_name: d.rule_name,
+        event_type: d.event_type,
+        status: d.status,
+        detail: { actions_run: d.actions_run },
+        created_at: d.created_at,
+      }
+      setExecutions((prev) => [exec, ...prev.filter((e) => e.id !== exec.id)].slice(0, 50))
+      setNewIds((prev) => new Set([...prev, d.id]))
       setTimeout(() => {
         setNewIds((prev) => {
           const next = new Set(prev)
-          next.delete(m.signal!.id)
+          next.delete(d.id)
           return next
         })
       }, 1000)
+    } else if (m.type === 'rule_disabled' && m.data) {
+      const d = m.data as RuleDisabledAlert
+      setAlerts((prev) => [...prev.filter((a) => a.rule_id !== d.rule_id), d])
     }
   }, [])
 
@@ -103,78 +208,108 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [sigRes, statsRes, leaderRes, chanRes] = await Promise.allSettled([
-          api.signals.list({ limit: 20 }),
-          api.signals.statsToday(),
-          api.scores.leaderboard({ window: '30d', min_signals: 5 }),
+        const [statsRes, execRes, rulesRes, chanRes] = await Promise.allSettled([
+          api.executions.stats(),
+          api.executions.list({ limit: 20 }),
+          api.rules.list(),
           api.channels.list(),
         ])
-        if (sigRes.status === 'fulfilled') {
-          const data = sigRes.value.data
-          setSignals(Array.isArray(data) ? data : [])
+        if (statsRes.status === 'fulfilled') setStats(statsRes.value.data)
+        if (execRes.status === 'fulfilled') {
+          const data = execRes.value.data
+          setExecutions(Array.isArray(data) ? data : [])
         }
-        if (statsRes.status === 'fulfilled') {
-          const s = statsRes.value.data
-          setStats((prev) => ({ ...prev, totalToday: s.total_today, active: s.active }))
+        if (rulesRes.status === 'fulfilled') {
+          const data = rulesRes.value.data
+          setRules(Array.isArray(data) ? data : [])
         }
-        if (leaderRes.status === 'fulfilled') setTopChannels(leaderRes.value.data.slice(0, 5))
-        if (chanRes.status === 'fulfilled') {
-          const channels = chanRes.value.data
-          const scores = channels.map((c) => c.quality_score ?? 0).filter((s) => s > 0)
-          const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
-          setStats((prev) => ({ ...prev, avgScore: avg, channelCount: channels.length }))
-        }
+        if (chanRes.status === 'fulfilled') setChannelCount(chanRes.value.data.length)
       } finally {
-        setSigLoading(false)
-        setStatsLoading(false)
+        setLoading(false)
       }
     }
     load()
   }, [])
 
+  const topRules = [...rules]
+    .sort((a, b) => (b.executions_24h ?? 0) - (a.executions_24h ?? 0))
+    .slice(0, 5)
+
   return (
     <AppShell connected={connected}>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+        {/* Rule auto-disabled warnings */}
+        {alerts.map((a) => (
+          <div
+            key={a.rule_id}
+            className="flex items-start gap-3 rounded-[var(--radius-lg)] border p-4 mb-4"
+            style={{ background: 'var(--loss-dim)', borderColor: 'var(--loss)' }}
+          >
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--loss)' }} />
+            <div className="flex-1" style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
+              Rule <span className="font-semibold">{a.name}</span> was auto-disabled: {a.reason}
+            </div>
+            <button
+              onClick={() => setAlerts((prev) => prev.filter((x) => x.rule_id !== a.rule_id))}
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text)] flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+
         {/* Stats row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            icon={<TrendingUp className="w-4 h-4" />}
-            label="Signals Today"
-            value={stats.totalToday}
-            loading={statsLoading}
-          />
-          <StatCard
             icon={<Zap className="w-4 h-4" />}
-            label="Active Signals"
-            value={stats.active}
+            label="Active automations"
+            value={stats?.active_rules ?? 0}
             sub={
-              stats.active > 0
-                ? `${stats.active} in play now`
-                : 'None active'
+              <Link to="/app/automations" className="text-[var(--accent)] hover:underline">
+                Manage rules
+              </Link>
             }
-            loading={statsLoading}
+            loading={loading}
           />
           <StatCard
-            icon={<BarChart2 className="w-4 h-4" />}
-            label="Avg Channel Score"
-            value={stats.avgScore > 0 ? stats.avgScore : '—'}
-            loading={statsLoading}
+            icon={<Activity className="w-4 h-4" />}
+            label="Executions 24h"
+            value={stats?.total_24h ?? 0}
+            sub={
+              stats ? (
+                <span>
+                  <span style={{ color: 'var(--win)' }}>{stats.success_24h} ok</span>
+                  {' · '}
+                  <span style={{ color: stats.errors_24h > 0 ? 'var(--loss)' : 'var(--text-muted)' }}>
+                    {stats.errors_24h} errors
+                  </span>
+                </span>
+              ) : undefined
+            }
+            loading={loading}
+          />
+          <StatCard
+            icon={<Send className="w-4 h-4" />}
+            label="Messages sent 7d"
+            value={stats?.sent_7d ?? 0}
+            loading={loading}
           />
           <StatCard
             icon={<Radio className="w-4 h-4" />}
-            label="Channels Watching"
-            value={stats.channelCount}
+            label="Channels connected"
+            value={channelCount}
             sub={
               <Link to="/app/channels" className="text-[var(--accent)] hover:underline flex items-center gap-1">
                 <Plus className="w-3 h-3" /> Add channel
               </Link>
             }
-            loading={statsLoading}
+            loading={loading}
           />
         </div>
 
-        {/* Onboarding banner — shown when user has no channels yet */}
-        {!statsLoading && stats.channelCount === 0 && (
+        {/* First-run CTA — shown when user has no rules yet */}
+        {!loading && rules.length === 0 && (
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] p-8 text-center mb-6"
             style={{ background: 'var(--surface)' }}
@@ -183,19 +318,19 @@ export default function Dashboard() {
               className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center mx-auto mb-4 text-[var(--accent)]"
               style={{ background: 'var(--accent-dim)' }}
             >
-              <Radio className="w-7 h-7" />
+              <Workflow className="w-7 h-7" />
             </div>
             <h2 className="font-bold text-[var(--text)] mb-2" style={{ fontSize: 'var(--text-xl)' }}>
-              Welcome to Tapwire
+              Create your first automation
             </h2>
             <p
               className="text-[var(--text-muted)] max-w-sm mx-auto mb-6"
               style={{ fontSize: 'var(--text-sm)' }}
             >
-              Add a Telegram signal channel to start tracking win rates, entry accuracy, and live signals in real time.
+              When TP2 hits → post the GIF to VIP. Build it in under a minute.
             </p>
             <Link
-              to="/app/channels"
+              to="/app/automations/new"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] font-medium transition-opacity hover:opacity-90"
               style={{
                 background: 'var(--accent)',
@@ -204,47 +339,117 @@ export default function Dashboard() {
               }}
             >
               <Plus className="w-4 h-4" />
-              Add your first channel
+              New automation
             </Link>
           </div>
         )}
 
         {/* Main grid */}
-        <div className="grid lg:grid-cols-5 gap-6">
-          {/* Signal feed — wider */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Live activity feed — wider */}
           <div
-            className="lg:col-span-3 rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
+            className="lg:col-span-2 rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
             style={{ background: 'var(--surface)' }}
           >
             <div className="px-5 py-4 border-b border-[var(--border)] flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--win)] pulse-dot" />
               <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-                Live Feed
+                Live activity
               </h2>
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
-              <SignalFeed
-                signals={signals}
-                onSignalClick={setSelected}
-                loading={sigLoading}
-                newIds={newIds}
-              />
+              {loading ? (
+                <div className="p-4 flex flex-col gap-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <SkeletonBlock height={8} width={8} className="rounded-full flex-shrink-0" />
+                      <SkeletonLine className="flex-1" />
+                      <SkeletonLine className="w-16" />
+                    </div>
+                  ))}
+                </div>
+              ) : executions.length === 0 ? (
+                <div className="py-16 text-center px-6">
+                  <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
+                    Automations will appear here as they run.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {executions.map((e) => {
+                    const actionsRun = e.detail?.actions_run
+                    return (
+                      <div
+                        key={e.id}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] hover:bg-[var(--surface-hover)] transition-colors"
+                        style={
+                          newIds.has(e.id)
+                            ? { background: 'var(--accent-dim)' }
+                            : undefined
+                        }
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ background: statusColor(e.status) }}
+                          title={statusLabel(e.status)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className="font-medium text-[var(--text)] truncate"
+                            style={{ fontSize: 'var(--text-sm)' }}
+                          >
+                            {e.rule_name || 'Unnamed rule'}
+                          </div>
+                          <div
+                            className="text-[var(--text-muted)] truncate"
+                            style={{ fontSize: 'var(--text-xs)' }}
+                          >
+                            {statusLabel(e.status)}
+                            {e.status === 'error' && e.detail?.error ? ` — ${e.detail.error}` : ''}
+                          </div>
+                        </div>
+                        <span
+                          className="px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)] flex-shrink-0"
+                          style={{ fontSize: 'var(--text-xs)' }}
+                        >
+                          {eventLabel(e.event_type)}
+                        </span>
+                        {actionsRun != null && (
+                          <span
+                            className="text-[var(--text-muted)] flex-shrink-0"
+                            style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+                            title="Actions run"
+                          >
+                            {actionsRun} act
+                          </span>
+                        )}
+                        <span
+                          className="text-[var(--text-faint)] flex-shrink-0 w-16 text-right"
+                          style={{ fontSize: 'var(--text-xs)' }}
+                        >
+                          {timeAgo(e.created_at)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right column */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {/* Top Channels */}
+          <div className="flex flex-col gap-4">
+            {/* Your automations */}
             <div
               className="rounded-[var(--radius-lg)] border border-[var(--border)]"
               style={{ background: 'var(--surface)' }}
             >
               <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
                 <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-                  Top Channels
+                  Your automations
                 </h2>
                 <Link
-                  to="/app/leaderboard"
+                  to="/app/automations"
                   className="text-[var(--accent)] hover:underline"
                   style={{ fontSize: 'var(--text-xs)' }}
                 >
@@ -252,109 +457,80 @@ export default function Dashboard() {
                 </Link>
               </div>
               <div className="p-2">
-                {topChannels.length === 0 ? (
-                  <div className="py-8 text-center">
+                {loading ? (
+                  <div className="p-3 flex flex-col gap-3">
+                    {[...Array(3)].map((_, i) => (
+                      <SkeletonLine key={i} />
+                    ))}
+                  </div>
+                ) : topRules.length === 0 ? (
+                  <div className="py-8 text-center px-4">
                     <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
-                      No channel data yet
+                      No automations yet
                     </p>
                   </div>
                 ) : (
-                  topChannels.map((ch, i) => {
-                    const tier = isValidTier(ch.quality_tier) ? ch.quality_tier : undefined
-                    return (
-                      <div
-                        key={ch.channel_id}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] hover:bg-[var(--surface-hover)] transition-colors"
+                  topRules.map((r) => (
+                    <Link
+                      key={r.id}
+                      to="/app/automations"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] hover:bg-[var(--surface-hover)] transition-colors"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: r.is_enabled ? 'var(--win)' : 'var(--text-faint)' }}
+                        title={r.is_enabled ? 'Enabled' : 'Disabled'}
+                      />
+                      <span
+                        className="font-medium text-[var(--text)] flex-1 truncate"
+                        style={{ fontSize: 'var(--text-sm)' }}
                       >
-                        <span
-                          className="font-bold text-[var(--text-faint)] w-4 flex-shrink-0"
-                          style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
-                        >
-                          {i + 1}
-                        </span>
-                        {tier && <QualityBadge tier={tier} size="sm" />}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)' }}>
-                            {ch.title}
-                          </div>
-                        </div>
-                        <span
-                          className="font-semibold flex-shrink-0"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 'var(--text-sm)',
-                            color: 'var(--win)',
-                          }}
-                        >
-                          {ch.win_rate != null ? `${Math.round(ch.win_rate)}%` : '—'}
-                        </span>
-                      </div>
-                    )
-                  })
+                        {r.name}
+                      </span>
+                      <span
+                        className="text-[var(--text-muted)] flex-shrink-0"
+                        style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+                        title="Executions in the last 24h"
+                      >
+                        {r.executions_24h ?? 0}
+                      </span>
+                    </Link>
+                  ))
                 )}
               </div>
             </div>
 
-            {/* Recent Outcomes */}
+            {/* Quick actions */}
             <div
-              className="rounded-[var(--radius-lg)] border border-[var(--border)] flex-1"
+              className="rounded-[var(--radius-lg)] border border-[var(--border)]"
               style={{ background: 'var(--surface)' }}
             >
               <div className="px-5 py-4 border-b border-[var(--border)]">
                 <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-                  Recent Outcomes
+                  Quick actions
                 </h2>
               </div>
-              <div className="p-2">
-                {signals
-                  .filter((s) => s.status === 'win' || s.status === 'loss')
-                  .slice(0, 5)
-                  .map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] hover:bg-[var(--surface-hover)] transition-colors cursor-pointer"
-                      onClick={() => setSelected(s)}
-                    >
-                      <span
-                        className="text-sm flex-shrink-0"
-                        style={{ fontSize: '16px' }}
-                      >
-                        {s.status === 'win' ? '✅' : '✗'}
-                      </span>
-                      <span
-                        className="font-medium text-[var(--text)] flex-1 truncate"
-                        style={{ fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)' }}
-                      >
-                        {s.pair}
-                      </span>
-                      {s.pips_result != null && (
-                        <span
-                          className="font-semibold flex-shrink-0"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 'var(--text-sm)',
-                            color: s.pips_result >= 0 ? 'var(--win)' : 'var(--loss)',
-                          }}
-                        >
-                          {s.pips_result >= 0 ? '+' : ''}{s.pips_result}p
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                {signals.filter((s) => s.status === 'win' || s.status === 'loss').length === 0 && (
-                  <div className="py-8 text-center">
-                    <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
-                      No resolved signals yet
-                    </p>
-                  </div>
-                )}
+              <div className="p-4 flex flex-col gap-2">
+                <QuickAction
+                  to="/app/automations/new"
+                  icon={<Plus className="w-4 h-4" />}
+                  label="New automation"
+                />
+                <QuickAction
+                  to="/app/templates"
+                  icon={<FileText className="w-4 h-4" />}
+                  label="New template"
+                />
+                <QuickAction
+                  to="/app/channels"
+                  icon={<Radio className="w-4 h-4" />}
+                  label="Open channels"
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <SignalDetail signal={selected} onClose={() => setSelected(null)} />
     </AppShell>
   )
 }

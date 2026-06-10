@@ -1,226 +1,218 @@
-import { useEffect, useState } from 'react'
-import { LayoutGrid, List, Plus, Radio } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowLeft, MessageSquare } from 'lucide-react'
 import { clsx } from 'clsx'
 import { AppShell } from '../components/layout/AppShell'
-import { ChannelCard } from '../components/channels/ChannelCard'
 import { AddChannelModal } from '../components/channels/AddChannelModal'
-import { SkeletonCard } from '../components/ui/Skeleton'
-import { EmptyState } from '../components/ui/EmptyState'
-import { QualityBadge } from '../components/channels/QualityBadge'
-import { api, type Channel } from '../lib/api'
+import { ChannelList, type ChannelSnippet } from '../components/chat/ChannelList'
+import { MessageThread } from '../components/chat/MessageThread'
+import { Composer } from '../components/chat/Composer'
+import { useSignalFeed } from '../lib/websocket'
+import {
+  api,
+  type Channel,
+  type ChannelMessage,
+  type MediaAsset,
+  type Template,
+} from '../lib/api'
 
-type QualityTier = 'S' | 'A' | 'B' | 'C' | 'D' | 'F'
-
-function isValidTier(t?: string): t is QualityTier {
-  return ['S', 'A', 'B', 'C', 'D', 'F'].includes(t || '')
+function snippetOf(m: ChannelMessage): ChannelSnippet {
+  return {
+    text: m.text?.trim() || (m.has_media ? `🎬 ${m.media_type || 'media'}` : ''),
+    posted_at: m.posted_at,
+  }
 }
 
-type SortKey = 'quality_score' | 'win_rate' | 'avg_rr' | 'signal_count'
-
 export default function Channels() {
-  const navigate = useNavigate()
   const [channels, setChannels] = useState<Channel[]>([])
-  const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'grid' | 'table'>('grid')
+  const [channelsLoading, setChannelsLoading] = useState(true)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChannelMessage[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(false)
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [media, setMedia] = useState<MediaAsset[]>([])
+  const [snippets, setSnippets] = useState<Record<string, ChannelSnippet>>({})
   const [addOpen, setAddOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<SortKey>('quality_score')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-  const load = async () => {
+  // Keep the selected channel id available to the (stable) WS callback
+  const selectedRef = useRef<string | null>(null)
+  selectedRef.current = selectedId
+
+  const loadChannels = useCallback(async () => {
     try {
       const res = await api.channels.list()
       setChannels(res.data)
     } finally {
-      setLoading(false)
+      setChannelsLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    loadChannels()
+    api.templates.list().then((r) => setTemplates(r.data)).catch(() => {})
+    api.media.list().then((r) => setMedia(r.data)).catch(() => {})
+  }, [loadChannels])
 
-  const sorted = [...channels].sort((a, b) => {
-    const av = a[sortBy] ?? 0
-    const bv = b[sortBy] ?? 0
-    return sortDir === 'desc' ? (bv as number) - (av as number) : (av as number) - (bv as number)
-  })
+  const updateSnippet = useCallback((channelId: string, snippet: ChannelSnippet) => {
+    setSnippets((prev) => {
+      const existing = prev[channelId]
+      if (existing && existing.posted_at > snippet.posted_at) return prev
+      return { ...prev, [channelId]: snippet }
+    })
+  }, [])
 
-  const handleSort = (key: SortKey) => {
-    if (sortBy === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortBy(key); setSortDir('desc') }
-  }
+  const appendMessage = useCallback((msg: ChannelMessage) => {
+    setMessages((prev) => {
+      if (
+        prev.some(
+          (m) => m.id === msg.id || (Boolean(msg.message_id) && m.message_id === msg.message_id)
+        )
+      ) {
+        return prev
+      }
+      return [...prev, msg]
+    })
+  }, [])
 
-  const SortIcon = ({ k }: { k: SortKey }) => (
-    <span className="ml-1" style={{ opacity: sortBy === k ? 1 : 0.3 }}>
-      {sortBy === k ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
-    </span>
+  // Load thread when channel selection changes
+  useEffect(() => {
+    if (!selectedId) {
+      setMessages([])
+      return
+    }
+    let cancelled = false
+    setMessagesLoading(true)
+    setMessages([])
+    api.messages
+      .list(selectedId, { limit: 50 })
+      .then((res) => {
+        if (cancelled) return
+        setMessages(res.data)
+        const last = res.data[res.data.length - 1]
+        if (last) updateSnippet(selectedId, snippetOf(last))
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setMessagesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedId, updateSnippet])
+
+  // Live updates over WS
+  const handleFeed = useCallback(
+    (raw: unknown) => {
+      const msg = raw as { type?: string; data?: ChannelMessage }
+      if (msg?.type !== 'channel_message' || !msg.data) return
+      const data = msg.data
+      updateSnippet(data.channel_id, snippetOf(data))
+      if (data.channel_id === selectedRef.current) {
+        appendMessage(data)
+      }
+    },
+    [updateSnippet, appendMessage]
+  )
+  const connected = useSignalFeed(handleFeed)
+
+  // Optimistic append after a successful send from the composer
+  const handleSent = useCallback(
+    (msg: ChannelMessage) => {
+      appendMessage(msg)
+      updateSnippet(msg.channel_id, snippetOf(msg))
+    },
+    [appendMessage, updateSnippet]
   )
 
-  return (
-    <AppShell>
-      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
-              {channels.length} channel{channels.length !== 1 ? 's' : ''} tracked
-            </p>
-          </div>
+  const selected = channels.find((c) => c.id === selectedId) ?? null
 
-          <div className="flex items-center gap-3">
-            {/* View toggle */}
-            <div
-              className="flex items-center rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden"
-              style={{ background: 'var(--surface)' }}
-            >
-              {(['grid', 'table'] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={clsx(
-                    'px-3 py-2 transition-colors',
-                    view === v
-                      ? 'bg-[var(--accent-dim)] text-[var(--accent)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                  )}
-                >
-                  {v === 'grid' ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                </button>
-              ))}
-            </div>
-          </div>
+  return (
+    <AppShell connected={connected}>
+      <div className="flex h-full min-h-0">
+        {/* Left pane — channel list (full-width on mobile until a channel is picked) */}
+        <div
+          className={clsx(
+            'flex-col flex-shrink-0 w-full lg:w-72 border-r border-[var(--border)] min-h-0',
+            selectedId ? 'hidden lg:flex' : 'flex'
+          )}
+          style={{ background: 'var(--surface)' }}
+        >
+          <ChannelList
+            channels={channels}
+            activeId={selectedId}
+            snippets={snippets}
+            loading={channelsLoading}
+            onSelect={setSelectedId}
+            onAdd={() => setAddOpen(true)}
+          />
         </div>
 
-        {/* Content */}
-        {loading ? (
-          view === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
-            </div>
+        {/* Center pane — thread + composer */}
+        <div
+          className={clsx(
+            'flex-1 flex-col min-w-0 min-h-0',
+            selectedId ? 'flex' : 'hidden lg:flex'
+          )}
+        >
+          {selected ? (
+            <>
+              {/* Thread header */}
+              <div
+                className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] flex-shrink-0"
+                style={{ background: 'var(--surface)' }}
+              >
+                <button
+                  onClick={() => setSelectedId(null)}
+                  className="lg:hidden p-1.5 rounded-[var(--radius-md)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors"
+                  title="Back to channels"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[var(--text-inverse)] flex-shrink-0"
+                  style={{ background: 'var(--accent)', fontSize: '12px' }}
+                >
+                  {selected.title?.[0]?.toUpperCase() || '#'}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-medium text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)' }}>
+                    {selected.title}
+                  </div>
+                  <div className="text-[var(--text-faint)] truncate" style={{ fontSize: 'var(--text-xs)' }}>
+                    @{selected.username}
+                  </div>
+                </div>
+              </div>
+
+              <MessageThread messages={messages} loading={messagesLoading} />
+
+              <Composer
+                key={selected.id}
+                channelId={selected.id}
+                templates={templates}
+                media={media}
+                onSent={handleSent}
+              />
+            </>
           ) : (
-            <SkeletonCard />
-          )
-        ) : sorted.length === 0 ? (
-          <EmptyState
-            icon={<Radio className="w-7 h-7" />}
-            title="No channels yet"
-            description="Add your first Telegram signal channel to start tracking performance."
-            action={{ label: 'Add Channel', onClick: () => setAddOpen(true) }}
-          />
-        ) : view === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sorted.map((ch) => (
-              <ChannelCard key={ch.id} channel={ch} />
-            ))}
-          </div>
-        ) : (
-          <div
-            className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-            style={{ background: 'var(--surface)' }}
-          >
-            <table className="w-full border-collapse" style={{ fontSize: 'var(--text-sm)' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  <th className="text-left px-5 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
-                    Channel
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-[var(--text)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    onClick={() => handleSort('quality_score')}>
-                    Tier <SortIcon k="quality_score" />
-                  </th>
-                  <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-[var(--text)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    onClick={() => handleSort('win_rate')}>
-                    Win Rate <SortIcon k="win_rate" />
-                  </th>
-                  <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-[var(--text)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    onClick={() => handleSort('avg_rr')}>
-                    R:R <SortIcon k="avg_rr" />
-                  </th>
-                  <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-[var(--text)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    onClick={() => handleSort('signal_count')}>
-                    Signals <SortIcon k="signal_count" />
-                  </th>
-                  <th className="text-right px-4 py-3 font-medium" style={{ color: 'var(--text-muted)' }}>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((ch) => {
-                  const tier = isValidTier(ch.quality_tier) ? ch.quality_tier : undefined
-                  return (
-                    <tr
-                      key={ch.id}
-                      className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors cursor-pointer"
-                      onClick={() => navigate(`/app/channels/${ch.id}`)}
-                    >
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[var(--text-inverse)] flex-shrink-0"
-                            style={{ background: 'var(--accent)', fontSize: '11px' }}
-                          >
-                            {ch.title?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-medium text-[var(--text)]">{ch.title}</div>
-                            <div className="text-[var(--text-faint)]" style={{ fontSize: 'var(--text-xs)' }}>
-                              @{ch.username}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {tier ? <QualityBadge tier={tier} size="sm" /> : <span style={{ color: 'var(--text-faint)' }}>—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono"
-                        style={{ fontFamily: 'var(--font-mono)', color: 'var(--win)' }}>
-                        {ch.win_rate != null ? `${Math.round(ch.win_rate)}%` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono"
-                        style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)' }}>
-                        {ch.avg_rr != null ? `${ch.avg_rr.toFixed(1)}x` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono"
-                        style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                        {ch.signal_count ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); navigate(`/app/channels/${ch.id}`) }}
-                          className="px-3 py-1 rounded text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors"
-                          style={{ fontSize: 'var(--text-xs)' }}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8 text-center">
+              <div
+                className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center text-[var(--text-muted)]"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                <MessageSquare className="w-7 h-7" />
+              </div>
+              <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-lg)' }}>
+                Select a channel
+              </h3>
+              <p className="text-[var(--text-muted)] max-w-sm" style={{ fontSize: 'var(--text-sm)' }}>
+                Pick a channel from the list to view its messages and send replies, templates or GIFs.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => setAddOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-[var(--shadow-accent)] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-        style={{ background: 'var(--accent)', color: '#0a0a0b' }}
-        title="Add Channel"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
-
-      <AddChannelModal
-        isOpen={addOpen}
-        onClose={() => setAddOpen(false)}
-        onAdded={load}
-      />
+      <AddChannelModal isOpen={addOpen} onClose={() => setAddOpen(false)} onAdded={loadChannels} />
     </AppShell>
   )
 }

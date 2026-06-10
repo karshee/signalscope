@@ -36,7 +36,19 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         ) as cursor:
             rows = await cursor.fetchall()
 
-    return {r["key"]: _deserialize(r["value"]) for r in rows}
+    out = {r["key"]: _deserialize(r["value"]) for r in rows}
+
+    # Never return the encrypted bot token — mask to last 4 chars
+    tg = out.get("telegram")
+    if isinstance(tg, dict) and tg.get("bot_token_enc"):
+        from backend.services.crypto import decrypt_str, mask_secret
+        try:
+            tg["bot_token_masked"] = mask_secret(decrypt_str(tg["bot_token_enc"]))
+        except ValueError:
+            tg["bot_token_masked"] = None
+        del tg["bot_token_enc"]
+
+    return out
 
 
 @router.put("/")
@@ -51,6 +63,26 @@ async def update_settings(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Invalid settings keys: {invalid}. Allowed: {sorted(_ALLOWED_KEYS)}",
         )
+
+    # Bot tokens are encrypted at rest and never echoed back in full
+    tg = settings.get("telegram")
+    if isinstance(tg, dict):
+        tg.pop("bot_token_masked", None)
+        if tg.get("bot_token"):
+            from backend.services.crypto import encrypt_str
+            tg["bot_token_enc"] = encrypt_str(tg.pop("bot_token"))
+        else:
+            # Round-tripped settings without a new token keep the stored one
+            async with get_db() as db:
+                async with db.execute(
+                    "SELECT value FROM user_settings WHERE user_id = ? AND key = 'telegram'",
+                    (current_user["id"],),
+                ) as cursor:
+                    row = await cursor.fetchone()
+            if row:
+                existing = _deserialize(row["value"])
+                if isinstance(existing, dict) and existing.get("bot_token_enc"):
+                    tg["bot_token_enc"] = existing["bot_token_enc"]
 
     async with get_db() as db:
         for key, value in settings.items():
@@ -100,6 +132,29 @@ async def test_telegram(current_user: dict = Depends(get_current_user)):
         }
     except Exception as e:
         return {"connected": False, "message": str(e)}
+
+
+@router.post("/telegram/bot/test")
+async def test_bot(current_user: dict = Depends(get_current_user)):
+    """Verify the user's bot token against the Bot API (getMe)."""
+    from engine.credentials import get_bot_token
+    from engine.sender import TelegramSender
+
+    token = await get_bot_token(current_user["id"])
+    if not token:
+        return {"connected": False, "message": "No bot token configured"}
+
+    try:
+        body = await TelegramSender().get_me(token)
+    except Exception as e:
+        return {"connected": False, "message": f"Bot API unreachable: {e}"}
+
+    if body.get("ok"):
+        username = (body.get("result") or {}).get("username")
+        return {"connected": True, "message": f"Connected as @{username}",
+                "bot_username": username}
+    return {"connected": False,
+            "message": body.get("description", "Token rejected by Telegram")}
 
 
 @router.post("/mt5/test")

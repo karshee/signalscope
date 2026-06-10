@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Shield, Search, Bell, Users, Zap, Code2, ArrowRight, ChevronDown } from 'lucide-react'
+import {
+  ChevronRight, Check, Zap, ArrowRight, ChevronDown,
+  MessageSquare, Workflow, TrendingUp, Clapperboard, Webhook, ShieldCheck,
+  Link2, Play,
+} from 'lucide-react'
 
 // ── Light theme design tokens ─────────────────────────────────────────────────
 
@@ -37,6 +41,28 @@ const GLOBAL_STYLES = `
   @keyframes termLine {
     from { opacity: 0; transform: translateX(-6px); }
     to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes flowDash {
+    to { stroke-dashoffset: -16; }
+  }
+  .tw-hiw-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    position: relative;
+  }
+  .tw-hiw-hline { display: block; }
+  .tw-hiw-vconnector { display: none; }
+  @media (max-width: 760px) {
+    .tw-hiw-grid { grid-template-columns: 1fr; gap: 0; }
+    .tw-hiw-hline { display: none; }
+    .tw-hiw-vconnector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
+      margin-left: 20px;
+    }
   }
 `
 
@@ -86,11 +112,13 @@ function Nav() {
         </div>
 
         {/* Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
           {[
             { label: 'How it works', href: '#how-it-works' },
-            { label: 'Use Cases',    href: '#use-cases' },
+            { label: 'Features',     href: '#features' },
+            { label: 'Use cases',    href: '#use-cases' },
             { label: 'Pricing',      href: '#pricing' },
+            { label: 'FAQ',          href: '#faq' },
           ].map((item) => (
             <a
               key={item.label}
@@ -130,60 +158,101 @@ function Nav() {
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
-          Get Started <ChevronRight style={{ width: 15, height: 15 }} />
+          Get started <ChevronRight style={{ width: 15, height: 15 }} />
         </button>
       </nav>
     </>
   )
 }
 
-// ── Terminal hero widget ───────────────────────────────────────────────────────
+// ── Rule canvas mock (hero visual) ────────────────────────────────────────────
 
-function TerminalWidget() {
-  const lines = [
-    { delay: 0,   content: <><span style={{ color: '#8b949e' }}>$ </span><span style={{ color: '#79c0ff' }}>pip install</span><span style={{ color: '#e6edf3' }}> tapwire</span></> },
-    { delay: 200, content: <span style={{ color: '#3fb950' }}>Successfully installed tapwire 0.4.1</span> },
-    { delay: 400, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 600, content: <><span style={{ color: '#8b949e' }}>$ </span><span style={{ color: '#79c0ff' }}>tapwire watch</span><span style={{ color: '#e6edf3' }}> @cryptonews \</span></> },
-    { delay: 700, content: <><span style={{ color: '#8b949e' }}>    </span><span style={{ color: '#ff7b72' }}>--keywords</span><span style={{ color: '#e6edf3' }}> &quot;bitcoin,eth,hack&quot; \</span></> },
-    { delay: 800, content: <><span style={{ color: '#8b949e' }}>    </span><span style={{ color: '#ff7b72' }}>--webhook</span><span style={{ color: '#e6edf3' }}> https://your-app.com/hook</span></> },
-    { delay: 1000, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 1100, content: <><span style={{ color: L.accent }}>Watching @cryptonews...</span><span style={{ color: '#8b949e' }}> (3 extractors active)</span></> },
-    { delay: 1300, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 1500, content: <><span style={{ color: '#8b949e' }}>[14:22] </span><span style={{ color: '#f0883e' }}>[KEYWORD]</span><span style={{ color: '#3fb950' }}> bitcoin_hit</span><span style={{ color: '#8b949e' }}> (conf: 100%)</span></> },
-    { delay: 1600, content: <><span style={{ color: '#8b949e' }}>  keyword: </span><span style={{ color: '#79c0ff' }}>bitcoin</span></> },
-    { delay: 1700, content: <><span style={{ color: '#8b949e' }}>  context: &quot;</span><span style={{ color: '#e6edf3' }}>Bitcoin breaks $70k resistance...</span><span style={{ color: '#8b949e' }}>&quot;</span></> },
-    { delay: 1900, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 2100, content: <><span style={{ color: '#8b949e' }}>[14:23] </span><span style={{ color: '#f0883e' }}>[SENTIMENT]</span><span style={{ color: '#3fb950' }}> bullish</span><span style={{ color: '#8b949e' }}> (conf: 87%)</span></> },
-    { delay: 2200, content: <><span style={{ color: '#8b949e' }}>  sentiment: </span><span style={{ color: '#3fb950' }}>bullish</span><span style={{ color: '#8b949e' }}>  bull_score: </span><span style={{ color: '#79c0ff' }}>4</span></> },
-    { delay: 2400, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 2600, content: <><span style={{ color: '#8b949e' }}>[14:24] </span><span style={{ color: '#f0883e' }}>[SIGNAL]</span><span style={{ color: '#3fb950' }}> trade_market</span><span style={{ color: '#8b949e' }}> (conf: 95%)</span></> },
-    { delay: 2700, content: <><span style={{ color: '#8b949e' }}>  pair: </span><span style={{ color: '#79c0ff' }}>XAUUSD</span><span style={{ color: '#8b949e' }}>  direction: </span><span style={{ color: '#3fb950' }}>buy</span></> },
-    { delay: 2800, content: <><span style={{ color: '#8b949e' }}>  entry: </span><span style={{ color: '#e6edf3' }}>2341.50</span><span style={{ color: '#8b949e' }}>  sl: </span><span style={{ color: '#f85149' }}>2328.00</span><span style={{ color: '#8b949e' }}>  tp1: </span><span style={{ color: '#3fb950' }}>2355.00</span></> },
-  ]
-
+function NodeCard({
+  symbol, symbolBg, symbolColor, kind, title, children, delay,
+}: {
+  symbol: string
+  symbolBg: string
+  symbolColor: string
+  kind: string
+  title: string
+  children?: React.ReactNode
+  delay: number
+}) {
   return (
     <div
       style={{
-        background: L.term,
-        borderRadius: '12px',
-        border: `1px solid ${L.termBorder}`,
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-        fontFamily: L.mono,
-        fontSize: '13px',
-        lineHeight: 1.7,
+        background: L.bg,
+        border: `1px solid ${L.border}`,
+        borderRadius: '10px',
+        padding: '12px 14px',
+        boxShadow: '0 4px 16px rgba(15,23,42,0.07)',
+        width: '100%',
+        animation: 'slideUp 400ms ease both',
+        animationDelay: `${delay}ms`,
+        position: 'relative',
       }}
     >
-      {/* Title bar */}
+      {/* connection ports */}
+      <div style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: L.bg, border: `2px solid ${L.accent}` }} />
+      <div style={{ position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: L.bg, border: `2px solid ${L.accent}` }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: children ? '8px' : 0 }}>
+        <div
+          style={{
+            width: 28, height: 28, borderRadius: '7px', flexShrink: 0,
+            background: symbolBg, color: symbolColor,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '13px',
+          }}
+        >
+          {symbol}
+        </div>
+        <div>
+          <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: L.textFaint }}>{kind}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: L.text }}>{title}</div>
+        </div>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function NodeConnector({ delay }: { delay: number }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', animation: 'slideUp 400ms ease both', animationDelay: `${delay}ms` }}>
+      <svg width="12" height="26" viewBox="0 0 12 26" fill="none">
+        <line
+          x1="6" y1="0" x2="6" y2="18"
+          stroke={L.accent} strokeWidth="2"
+          strokeDasharray="4 4"
+          style={{ animation: 'flowDash 1.2s linear infinite' }}
+        />
+        <path d="M1.5 18.5 L6 24 L10.5 18.5" stroke={L.accent} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  )
+}
+
+function RuleCanvas() {
+  return (
+    <div
+      style={{
+        background: L.bg,
+        borderRadius: '14px',
+        border: `1px solid ${L.border}`,
+        overflow: 'hidden',
+        boxShadow: '0 24px 64px rgba(15,23,42,0.16)',
+      }}
+    >
+      {/* Window title bar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '10px 16px',
-          background: 'rgba(255,255,255,0.04)',
-          borderBottom: `1px solid ${L.termBorder}`,
+          background: L.surface,
+          borderBottom: `1px solid ${L.border}`,
         }}
       >
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -191,33 +260,100 @@ function TerminalWidget() {
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
         </div>
-        <span style={{ fontSize: '11px', color: '#8b949e' }}>tapwire — zsh</span>
-        {/* Live dot */}
+        <span style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>tapwire — rule builder</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <div
             style={{
               width: 7, height: 7, borderRadius: '50%',
-              background: '#3fb950',
+              background: L.accent,
               animation: 'pulseDot 1.5s ease-in-out infinite',
             }}
           />
-          <span style={{ fontSize: '10px', color: '#3fb950', fontWeight: 600 }}>LIVE</span>
+          <span style={{ fontSize: '10px', color: L.accent, fontWeight: 700 }}>ACTIVE</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ padding: '16px 18px' }}>
-        {lines.map((line, i) => (
+      {/* Canvas with dot grid */}
+      <div
+        style={{
+          padding: '24px 28px',
+          background: L.surface,
+          backgroundImage: 'radial-gradient(rgba(15,23,42,0.08) 1px, transparent 1px)',
+          backgroundSize: '18px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+        }}
+      >
+        <NodeCard
+          symbol="⚡"
+          symbolBg={L.accentDim}
+          symbolColor={L.accent}
+          kind="TRIGGER"
+          title="TP hit on XAUUSD"
+          delay={200}
+        >
+          <div style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>
+            watching <span style={{ color: L.accent }}>@GoldSignalsVIP</span> · live prices
+          </div>
+        </NodeCard>
+
+        <NodeConnector delay={350} />
+
+        <NodeCard
+          symbol="◆"
+          symbolBg="rgba(245,158,11,0.12)"
+          symbolColor="#d97706"
+          kind="CONDITION"
+          title="tp_level ≥ 2"
+          delay={450}
+        >
+          <div style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>
+            only announce the big targets
+          </div>
+        </NodeCard>
+
+        <NodeConnector delay={600} />
+
+        <NodeCard
+          symbol="▶"
+          symbolBg="rgba(59,130,246,0.12)"
+          symbolColor="#2563eb"
+          kind="ACTION"
+          title="Post to @VIPSignals"
+          delay={700}
+        >
           <div
-            key={i}
             style={{
-              animation: `termLine 300ms ease both`,
-              animationDelay: `${line.delay}ms`,
+              background: L.surface2,
+              border: `1px solid ${L.border}`,
+              borderRadius: '8px',
+              padding: '8px 10px',
+              fontSize: '12px',
+              color: L.text,
+              marginBottom: '8px',
             }}
           >
-            {line.content}
+            🎯 XAUUSD TP2 HIT! +150 pips 🚀
           </div>
-        ))}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 10px',
+              borderRadius: '999px',
+              background: L.accentDim,
+              border: `1px solid ${L.accentBorder}`,
+              fontSize: '11px',
+              color: L.accent,
+              fontWeight: 600,
+              fontFamily: L.mono,
+            }}
+          >
+            🎬 celebration.gif
+          </div>
+        </NodeCard>
       </div>
     </div>
   )
@@ -274,7 +410,7 @@ function Hero() {
                 animation: 'pulseDot 1.5s ease-in-out infinite',
               }}
             />
-            Telegram Intelligence Platform
+            Telegram Channel Automation
           </div>
 
           <h1
@@ -287,8 +423,8 @@ function Hero() {
               marginBottom: '20px',
             }}
           >
-            Watch any Telegram.{' '}
-            <span style={{ color: L.accent }}>Extract any signal.</span>
+            Put your Telegram channels{' '}
+            <span style={{ color: L.accent }}>on autopilot.</span>
           </h1>
 
           <p
@@ -300,8 +436,9 @@ function Hero() {
               marginBottom: '32px',
             }}
           >
-            Monitor any channel or group. Get structured data — trading signals, keyword alerts,
-            sentiment scores, entity mentions — delivered in real-time to your app, webhook, or CLI.
+            One workspace for all your channels, plus a visual if-this-then-that builder.
+            Traders, marketers, and community managers use Tapwire to post the right
+            message — text or GIFs — at exactly the right moment. No code.
           </p>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -323,10 +460,10 @@ function Hero() {
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
-              Start Free <ChevronRight style={{ width: 16, height: 16 }} />
+              Get started free <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
             <a
-              href="#cli-section"
+              href="#how-it-works"
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '12px 24px',
@@ -343,12 +480,12 @@ function Hero() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.18)'; e.currentTarget.style.color = L.text }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = L.border; e.currentTarget.style.color = L.textMuted }}
             >
-              View docs
+              See how it works
             </a>
           </div>
 
           <p style={{ fontSize: '12px', color: L.textFaint, marginBottom: '24px', fontFamily: L.mono }}>
-            Free forever · No credit card · pip install tapwire
+            Free plan · No credit card · First rule live in minutes
           </p>
 
           {/* Trust marks */}
@@ -362,10 +499,10 @@ function Hero() {
             }}
           >
             {[
-              { icon: '🔒', text: 'Read-only access' },
-              { icon: '📡', text: '35+ pairs' },
-              { icon: '⚡', text: 'Real-time' },
-              { icon: '🔗', text: 'REST API + Webhooks' },
+              { icon: '🤖', text: 'Your own bot, your control' },
+              { icon: '🧩', text: 'Visual rule builder' },
+              { icon: '📈', text: 'TP/SL detection' },
+              { icon: '🔗', text: 'Webhook triggers' },
             ].map((t) => (
               <div key={t.text} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '14px' }}>{t.icon}</span>
@@ -375,120 +512,9 @@ function Hero() {
           </div>
         </div>
 
-        {/* Right — terminal */}
+        {/* Right — rule canvas mock */}
         <div style={{ animation: 'slideUp 500ms ease 150ms both' }}>
-          <TerminalWidget />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ── Use Cases ─────────────────────────────────────────────────────────────────
-
-const USE_CASES = [
-  {
-    icon: '📈',
-    title: 'Trading Signal Tracking',
-    desc: 'Parse entry/SL/TP from any signal channel. Track win rates and R:R automatically.',
-    lucide: <Zap style={{ width: 18, height: 18 }} />,
-  },
-  {
-    icon: '🔍',
-    title: 'Brand & Competitor Monitoring',
-    desc: 'Get alerted when your brand, product, or competitors are mentioned in any group.',
-    lucide: <Search style={{ width: 18, height: 18 }} />,
-  },
-  {
-    icon: '🔐',
-    title: 'OSINT & Threat Intelligence',
-    desc: 'Monitor public groups for keywords related to threats, fraud, or specific entities.',
-    lucide: <Shield style={{ width: 18, height: 18 }} />,
-  },
-  {
-    icon: '💬',
-    title: 'Community Health',
-    desc: 'Score engagement, detect bot activity, track sentiment across your own groups.',
-    lucide: <Users style={{ width: 18, height: 18 }} />,
-  },
-  {
-    icon: '🚨',
-    title: 'Real-time Keyword Alerts',
-    desc: 'Receive webhook or Telegram notifications when any keyword appears in any channel.',
-    lucide: <Bell style={{ width: 18, height: 18 }} />,
-  },
-  {
-    icon: '🛠️',
-    title: 'Developer SDK & API',
-    desc: 'Use our Python SDK or REST API to build your own intelligence pipeline.',
-    lucide: <Code2 style={{ width: 18, height: 18 }} />,
-  },
-]
-
-function UseCases() {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
-
-  return (
-    <section
-      id="use-cases"
-      style={{ background: L.surface, padding: '96px 0' }}
-    >
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <h2
-            style={{
-              fontSize: 'clamp(28px, 3.5vw, 40px)',
-              fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
-              marginBottom: '12px',
-            }}
-          >
-            Built for everyone watching Telegram
-          </h2>
-          <p style={{ fontSize: '16px', color: L.textMuted }}>One platform. Many intelligence needs.</p>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '16px',
-          }}
-        >
-          {USE_CASES.map((uc, i) => (
-            <div
-              key={i}
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
-              style={{
-                background: L.bg,
-                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
-                borderRadius: '12px',
-                padding: '24px',
-                cursor: 'default',
-                transition: 'all 0.2s ease',
-                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
-                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
-              }}
-            >
-              <div
-                style={{
-                  width: 40, height: 40,
-                  borderRadius: '10px',
-                  background: L.accentDim,
-                  border: `1px solid ${L.accentBorder}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: L.accent,
-                  marginBottom: '16px',
-                }}
-              >
-                {uc.lucide}
-              </div>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>{uc.title}</h3>
-              <p style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.65 }}>{uc.desc}</p>
-            </div>
-          ))}
+          <RuleCanvas />
         </div>
       </div>
     </section>
@@ -501,21 +527,24 @@ function HowItWorks() {
   const steps = [
     {
       n: '01',
-      title: 'Connect your Telegram',
-      desc: 'Add your Telegram API credentials. Read-only access — Tapwire never posts, never interacts, never touches your messages.',
-      detail: 'Takes about 2 minutes',
+      icon: <Link2 style={{ width: 18, height: 18 }} />,
+      title: 'Connect your channels',
+      desc: 'Add the channels you manage and paste a bot token from BotFather. That’s the whole setup.',
+      detail: 'About 2 minutes',
     },
     {
       n: '02',
-      title: 'Configure extractors',
-      desc: 'Choose what to extract: trading signals, keywords, sentiment scores, entity mentions — or enable all extractors at once.',
-      detail: 'Mix and match per channel',
+      icon: <Workflow style={{ width: 18, height: 18 }} />,
+      title: 'Build rules visually',
+      desc: 'Drag trigger, condition, and action blocks onto a canvas. “If this happens, post that.” No code.',
+      detail: 'First rule in minutes',
     },
     {
       n: '03',
-      title: 'Receive structured data',
-      desc: 'Results flow to your dashboard, JSON API, webhooks, or CLI output — however your workflow needs it.',
-      detail: 'Updated in real-time',
+      icon: <Zap style={{ width: 18, height: 18 }} />,
+      title: 'Tapwire runs 24/7',
+      desc: 'Messages, GIFs, and announcements post themselves — while you trade, sleep, or do anything else.',
+      detail: 'Always on',
     },
   ]
 
@@ -544,62 +573,82 @@ function HowItWorks() {
               lineHeight: 1.15,
             }}
           >
-            Up and running in minutes.
+            From sign-up to your first automation in minutes.
           </h2>
         </div>
 
         {/* Steps */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '40px 0',
-            position: 'relative',
-          }}
-        >
-          {/* Connector line */}
+        <div className="tw-hiw-grid">
+          {/* Connector line (desktop) */}
           <div
+            className="tw-hiw-hline"
             style={{
               position: 'absolute',
               top: '20px',
-              left: '40px',
-              right: '40px',
-              height: '1px',
-              background: `linear-gradient(to right, transparent, ${L.border} 10%, ${L.border} 90%, transparent)`,
+              left: '60px',
+              right: '60px',
+              height: '2px',
+              background: `linear-gradient(to right, transparent, ${L.accentBorder} 10%, ${L.accentBorder} 90%, transparent)`,
             }}
           />
 
           {steps.map((step, i) => (
-            <div key={i} style={{ paddingRight: '40px', position: 'relative' }}>
-              {/* Circle */}
-              <div
-                style={{
-                  width: 40, height: 40,
-                  borderRadius: '50%',
-                  background: L.bg,
-                  border: `2px solid ${L.accent}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: L.mono,
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  color: L.accent,
-                  marginBottom: '20px',
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
-                {step.n}
+            <div key={i}>
+              <div style={{ position: 'relative' }}>
+                {/* Number badge */}
+                <div
+                  style={{
+                    width: 40, height: 40,
+                    borderRadius: '50%',
+                    background: L.bg,
+                    border: `2px solid ${L.accent}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: L.mono,
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: L.accent,
+                    marginBottom: '20px',
+                    position: 'relative',
+                    zIndex: 1,
+                  }}
+                >
+                  {step.n}
+                </div>
+
+                <div
+                  style={{
+                    width: 36, height: 36,
+                    borderRadius: '9px',
+                    background: L.accentDim,
+                    border: `1px solid ${L.accentBorder}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: L.accent,
+                    marginBottom: '14px',
+                  }}
+                >
+                  {step.icon}
+                </div>
+
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.65, marginBottom: '10px', maxWidth: '280px' }}>
+                  {step.desc}
+                </p>
+                <span style={{ fontSize: '11px', color: L.accent, fontFamily: L.mono, fontWeight: 600 }}>
+                  → {step.detail}
+                </span>
               </div>
 
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>
-                {step.title}
-              </h3>
-              <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.65, marginBottom: '10px' }}>
-                {step.desc}
-              </p>
-              <span style={{ fontSize: '11px', color: L.accent, fontFamily: L.mono, fontWeight: 600 }}>
-                → {step.detail}
-              </span>
+              {/* Vertical connector (mobile only) */}
+              {i < steps.length - 1 && (
+                <div className="tw-hiw-vconnector">
+                  <svg width="12" height="34" viewBox="0 0 12 34" fill="none">
+                    <line x1="6" y1="0" x2="6" y2="26" stroke={L.accentBorder} strokeWidth="2" strokeDasharray="4 4" />
+                    <path d="M1.5 26.5 L6 32 L10.5 26.5" stroke={L.accent} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -608,256 +657,319 @@ function HowItWorks() {
   )
 }
 
-// ── CLI / SDK Section ─────────────────────────────────────────────────────────
+// ── Features ──────────────────────────────────────────────────────────────────
 
-const CLI_TABS = ['CLI', 'Python SDK', 'REST API'] as const
-type CliTab = typeof CLI_TABS[number]
+const FEATURES = [
+  {
+    title: 'Chat workspace',
+    desc: 'All your channels in one clean inbox. Click a saved template to post text or GIFs — instantly, without switching apps.',
+    lucide: <MessageSquare style={{ width: 18, height: 18 }} />,
+  },
+  {
+    title: 'Visual rule builder',
+    desc: 'Drag Trigger → Condition → Action blocks onto a canvas. If this happens, post that. No code, no YAML, no scripts.',
+    lucide: <Workflow style={{ width: 18, height: 18 }} />,
+  },
+  {
+    title: 'Trading triggers',
+    desc: 'Tapwire parses signals in your channels and tracks TP/SL against live prices. The moment a target hits, your rule fires.',
+    lucide: <TrendingUp style={{ width: 18, height: 18 }} />,
+  },
+  {
+    title: 'Saved templates & GIFs',
+    desc: 'Reusable templates with variables like {pair}, {tp_level}, and {pips}. Attach media once, post it everywhere.',
+    lucide: <Clapperboard style={{ width: 18, height: 18 }} />,
+  },
+  {
+    title: 'Webhooks & integrations',
+    desc: 'Any external system can fire your automations with one HTTP call. Trading bots, CRMs, cron jobs — if it can curl, it can post.',
+    lucide: <Webhook style={{ width: 18, height: 18 }} />,
+  },
+  {
+    title: 'Loop-safe engine',
+    desc: 'Rate limits, self-send protection, and a full execution log. Your rules can’t spam your channels or trigger each other forever.',
+    lucide: <ShieldCheck style={{ width: 18, height: 18 }} />,
+  },
+]
 
-const CLI_CONTENT: Record<CliTab, JSX.Element> = {
-  CLI: (
-    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
-      <span style={{ color: '#8b949e' }}># Install{'\n'}</span>
-      <span style={{ color: '#79c0ff' }}>pip install</span>
-      <span style={{ color: '#e6edf3' }}> tapwire{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># Watch for trading signals{'\n'}</span>
-      <span style={{ color: '#79c0ff' }}>tapwire watch</span>
-      <span style={{ color: '#e6edf3' }}> @forexalpha</span>
-      <span style={{ color: '#ff7b72' }}> --extract</span>
-      <span style={{ color: '#a5d6ff' }}> signals</span>
-      <span style={{ color: '#ff7b72' }}> --output</span>
-      <span style={{ color: '#a5d6ff' }}> json{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># Watch for keywords with webhook delivery{'\n'}</span>
-      <span style={{ color: '#79c0ff' }}>tapwire watch</span>
-      <span style={{ color: '#e6edf3' }}> @cryptonews</span>
-      <span style={{ color: '#ff7b72' }}> --keywords</span>
-      <span style={{ color: '#a5d6ff' }}> &quot;bitcoin,eth&quot;</span>
-      <span style={{ color: '#ff7b72' }}> --webhook</span>
-      <span style={{ color: '#a5d6ff' }}> https://hooks.slack.com/...{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># Export history as CSV{'\n'}</span>
-      <span style={{ color: '#79c0ff' }}>tapwire export</span>
-      <span style={{ color: '#ff7b72' }}> --channel</span>
-      <span style={{ color: '#e6edf3' }}> @forexalpha</span>
-      <span style={{ color: '#ff7b72' }}> --since</span>
-      <span style={{ color: '#a5d6ff' }}> 30d</span>
-      <span style={{ color: '#ff7b72' }}> --format</span>
-      <span style={{ color: '#a5d6ff' }}> csv</span>
-    </pre>
-  ),
-
-  'Python SDK': (
-    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
-      <span style={{ color: '#ff7b72' }}>from</span>
-      <span style={{ color: '#e6edf3' }}> tapwire </span>
-      <span style={{ color: '#ff7b72' }}>import</span>
-      <span style={{ color: '#79c0ff' }}> Watcher</span>
-      <span style={{ color: '#e6edf3' }}>, </span>
-      <span style={{ color: '#79c0ff' }}>ExtractorRegistry{'\n'}</span>
-      <span style={{ color: '#ff7b72' }}>from</span>
-      <span style={{ color: '#e6edf3' }}> tapwire.extractors </span>
-      <span style={{ color: '#ff7b72' }}>import</span>
-      <span style={{ color: '#79c0ff' }}> SignalExtractor</span>
-      <span style={{ color: '#e6edf3' }}>, </span>
-      <span style={{ color: '#79c0ff' }}>KeywordExtractor{'\n\n'}</span>
-
-      <span style={{ color: '#ff7b72' }}>async def</span>
-      <span style={{ color: '#d2a8ff' }}> main</span>
-      <span style={{ color: '#e6edf3' }}>():{'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>    watcher </span>
-      <span style={{ color: '#ff7b72' }}>=</span>
-      <span style={{ color: '#79c0ff' }}> Watcher</span>
-      <span style={{ color: '#e6edf3' }}>.</span>
-      <span style={{ color: '#d2a8ff' }}>from_env</span>
-      <span style={{ color: '#e6edf3' }}>(){'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>    registry </span>
-      <span style={{ color: '#ff7b72' }}>=</span>
-      <span style={{ color: '#79c0ff' }}> ExtractorRegistry</span>
-      <span style={{ color: '#e6edf3' }}>(){'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>    registry.</span>
-      <span style={{ color: '#d2a8ff' }}>register</span>
-      <span style={{ color: '#e6edf3' }}>(</span>
-      <span style={{ color: '#79c0ff' }}>SignalExtractor</span>
-      <span style={{ color: '#e6edf3' }}>())</span>
-      <span style={{ color: '#8b949e' }}>{'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>    registry.</span>
-      <span style={{ color: '#d2a8ff' }}>register</span>
-      <span style={{ color: '#e6edf3' }}>(</span>
-      <span style={{ color: '#79c0ff' }}>KeywordExtractor</span>
-      <span style={{ color: '#e6edf3' }}>(</span>
-      <span style={{ color: '#a5d6ff' }}>[&quot;bitcoin&quot;, &quot;hack&quot;, &quot;launch&quot;]</span>
-      <span style={{ color: '#e6edf3' }}>)){'\n\n'}</span>
-      <span style={{ color: '#ff7b72' }}>    async for</span>
-      <span style={{ color: '#e6edf3' }}> event </span>
-      <span style={{ color: '#ff7b72' }}>in</span>
-      <span style={{ color: '#e6edf3' }}> watcher.</span>
-      <span style={{ color: '#d2a8ff' }}>stream</span>
-      <span style={{ color: '#e6edf3' }}>(</span>
-      <span style={{ color: '#a5d6ff' }}>&quot;@cryptonews&quot;</span>
-      <span style={{ color: '#e6edf3' }}>):{'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>        events </span>
-      <span style={{ color: '#ff7b72' }}>=</span>
-      <span style={{ color: '#e6edf3' }}> registry.</span>
-      <span style={{ color: '#d2a8ff' }}>process</span>
-      <span style={{ color: '#e6edf3' }}>(event.text){'\n'}</span>
-      <span style={{ color: '#ff7b72' }}>        for</span>
-      <span style={{ color: '#e6edf3' }}> ev </span>
-      <span style={{ color: '#ff7b72' }}>in</span>
-      <span style={{ color: '#e6edf3' }}> events:{'\n'}</span>
-      <span style={{ color: '#e6edf3' }}>            </span>
-      <span style={{ color: '#79c0ff' }}>print</span>
-      <span style={{ color: '#e6edf3' }}>(ev.event_type, ev.data)</span>
-    </pre>
-  ),
-
-  'REST API': (
-    <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}>
-      <span style={{ color: '#8b949e' }}># List channels{'\n'}</span>
-      <span style={{ color: '#3fb950' }}>GET</span>
-      <span style={{ color: '#e6edf3' }}> /api/channels{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># Get signal feed{'\n'}</span>
-      <span style={{ color: '#3fb950' }}>GET</span>
-      <span style={{ color: '#e6edf3' }}> /api/signals</span>
-      <span style={{ color: '#ff7b72' }}>?channel_id</span>
-      <span style={{ color: '#e6edf3' }}>=xxx</span>
-      <span style={{ color: '#ff7b72' }}>&amp;limit</span>
-      <span style={{ color: '#e6edf3' }}>=50{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># Get leaderboard{'\n'}</span>
-      <span style={{ color: '#3fb950' }}>GET</span>
-      <span style={{ color: '#e6edf3' }}> /api/scores/leaderboard</span>
-      <span style={{ color: '#ff7b72' }}>?window</span>
-      <span style={{ color: '#e6edf3' }}>=30d</span>
-      <span style={{ color: '#ff7b72' }}>&amp;min_signals</span>
-      <span style={{ color: '#e6edf3' }}>=5{'\n\n'}</span>
-
-      <span style={{ color: '#8b949e' }}># WebSocket live feed{'\n'}</span>
-      <span style={{ color: '#f0883e' }}>WS</span>
-      <span style={{ color: '#e6edf3' }}> /ws/feed</span>
-      <span style={{ color: '#ff7b72' }}>?token</span>
-      <span style={{ color: '#e6edf3' }}>=&lt;jwt&gt;</span>
-    </pre>
-  ),
-}
-
-function CliSection() {
-  const [activeTab, setActiveTab] = useState<CliTab>('CLI')
+function Features() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   return (
     <section
-      id="cli-section"
-      style={{ background: L.term, padding: '96px 0' }}
+      id="features"
+      style={{ background: L.surface, padding: '96px 0' }}
     >
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
+            FEATURES
+          </p>
+          <h2
+            style={{
+              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+              marginBottom: '12px',
+            }}
+          >
+            Everything channel work needs. Nothing it doesn&apos;t.
+          </h2>
+          <p style={{ fontSize: '16px', color: L.textMuted }}>Post by hand from one inbox, or let rules do it for you.</p>
+        </div>
+
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1.6fr',
-            gap: '64px',
-            alignItems: 'start',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '16px',
           }}
         >
-          {/* Left text */}
-          <div>
-            <p
+          {FEATURES.map((f, i) => (
+            <div
+              key={i}
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
               style={{
-                fontSize: '12px',
-                fontWeight: 700,
-                color: L.accent,
-                letterSpacing: '0.08em',
-                marginBottom: '12px',
+                background: L.bg,
+                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
+                borderRadius: '12px',
+                padding: '24px',
+                cursor: 'default',
+                transition: 'all 0.2s ease',
+                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
               }}
             >
-              DEVELOPER-FIRST
-            </p>
-            <h2
-              style={{
-                fontSize: 'clamp(26px, 3vw, 36px)',
-                fontWeight: 800,
-                color: '#e6edf3',
-                letterSpacing: '-0.025em',
-                lineHeight: 1.2,
-                marginBottom: '16px',
-              }}
-            >
-              Developer-first from day one
-            </h2>
-            <p style={{ fontSize: '15px', color: '#8b949e', lineHeight: 1.7, marginBottom: '28px' }}>
-              A clean Python SDK, REST API, and CLI. Pipe Telegram data anywhere. Build your own
-              intelligence pipeline in minutes.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                'pip install tapwire',
-                'Webhook delivery',
-                'Full JSON / CSV export',
-                'WebSocket live feed',
-              ].map((f) => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Check style={{ width: 14, height: 14, color: L.accent, flexShrink: 0 }} />
-                  <span style={{ fontSize: '14px', color: '#8b949e', fontFamily: L.mono }}>{f}</span>
-                </div>
-              ))}
+              <div
+                style={{
+                  width: 40, height: 40,
+                  borderRadius: '10px',
+                  background: L.accentDim,
+                  border: `1px solid ${L.accentBorder}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: L.accent,
+                  marginBottom: '16px',
+                }}
+              >
+                {f.lucide}
+              </div>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>{f.title}</h3>
+              <p style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.65 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Live example strip (dark panel) ───────────────────────────────────────────
+
+function LiveExample() {
+  const lines = [
+    { delay: 0,    content: <><span style={{ color: '#8b949e' }}>[09:30:14] </span><span style={{ color: '#79c0ff' }}>@GoldSignalsVIP</span><span style={{ color: '#8b949e' }}> → incoming message</span></> },
+    { delay: 150,  content: <><span style={{ color: '#8b949e' }}>  &quot;</span><span style={{ color: '#e6edf3' }}>XAUUSD BUY 2341.50 | TP1 2348.00 TP2 2355.00 | SL 2330.00</span><span style={{ color: '#8b949e' }}>&quot;</span></> },
+    { delay: 350,  content: <><span style={{ color: '#8b949e' }}>[09:30:14] </span><span style={{ color: '#f0883e' }}>[PARSE]</span><span style={{ color: '#3fb950' }}> signal detected</span><span style={{ color: '#8b949e' }}> — pair: </span><span style={{ color: '#79c0ff' }}>XAUUSD</span><span style={{ color: '#8b949e' }}>, tracking TP/SL vs live price</span></> },
+    { delay: 550,  content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 750,  content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[PRICE]</span><span style={{ color: '#e6edf3' }}> XAUUSD 2355.10 ≥ TP2 2355.00</span></> },
+    { delay: 950,  content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[TRIGGER]</span><span style={{ color: '#3fb950' }}> tp_hit</span><span style={{ color: '#8b949e' }}> — tp_level: </span><span style={{ color: '#79c0ff' }}>2</span><span style={{ color: '#8b949e' }}>, pips: </span><span style={{ color: '#3fb950' }}>+150</span></> },
+    { delay: 1150, content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[CONDITION]</span><span style={{ color: '#e6edf3' }}> tp_level ≥ 2 </span><span style={{ color: '#3fb950' }}>✓ pass</span></> },
+    { delay: 1350, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
+    { delay: 1550, content: <><span style={{ color: '#8b949e' }}>[11:02:42] </span><span style={{ color: '#f0883e' }}>[ACTION]</span><span style={{ color: '#3fb950' }}> posted</span><span style={{ color: '#8b949e' }}> → </span><span style={{ color: '#79c0ff' }}>@VIPSignals</span></> },
+    { delay: 1700, content: <><span style={{ color: '#8b949e' }}>  &quot;</span><span style={{ color: '#e6edf3' }}>🎯 XAUUSD TP2 HIT! +150 pips 🚀</span><span style={{ color: '#8b949e' }}>&quot; + </span><span style={{ color: L.accent }}>[celebration.gif]</span></> },
+  ]
+
+  return (
+    <section style={{ background: L.term, padding: '96px 0' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '12px' }}>
+            LIVE EXAMPLE
+          </p>
+          <h2
+            style={{
+              fontSize: 'clamp(26px, 3vw, 36px)',
+              fontWeight: 800,
+              color: '#e6edf3',
+              letterSpacing: '-0.025em',
+              lineHeight: 1.2,
+            }}
+          >
+            A signal comes in. Tapwire takes it from there.
+          </h2>
+        </div>
+
+        <div
+          style={{
+            background: L.term,
+            borderRadius: '12px',
+            border: `1px solid ${L.termBorder}`,
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            fontFamily: L.mono,
+            fontSize: '13px',
+            lineHeight: 1.7,
+          }}
+        >
+          {/* Title bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255,255,255,0.04)',
+              borderBottom: `1px solid ${L.termBorder}`,
+            }}
+          >
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
+            </div>
+            <span style={{ fontSize: '11px', color: '#8b949e' }}>tapwire — execution log</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div
+                style={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: '#3fb950',
+                  animation: 'pulseDot 1.5s ease-in-out infinite',
+                }}
+              />
+              <span style={{ fontSize: '10px', color: '#3fb950', fontWeight: 600 }}>LIVE</span>
             </div>
           </div>
 
-          {/* Right code block */}
-          <div>
-            {/* Tab bar */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '4px',
-                marginBottom: '0',
-                background: 'rgba(255,255,255,0.04)',
-                borderRadius: '10px 10px 0 0',
-                border: `1px solid ${L.termBorder}`,
-                borderBottom: 'none',
-                padding: '6px 6px 0',
-              }}
-            >
-              {CLI_TABS.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '6px 6px 0 0',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    fontFamily: L.mono,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    background: activeTab === tab ? L.term : 'transparent',
-                    color: activeTab === tab ? '#e6edf3' : '#8b949e',
-                    borderBottom: activeTab === tab ? `2px solid ${L.accent}` : '2px solid transparent',
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Code area */}
-            <div
-              style={{
-                background: L.term,
-                border: `1px solid ${L.termBorder}`,
-                borderRadius: '0 0 10px 10px',
-                padding: '20px 22px',
-                fontFamily: L.mono,
-                fontSize: '13px',
-                lineHeight: 1.7,
-                overflowX: 'auto',
-                minHeight: '240px',
-              }}
-            >
-              {CLI_CONTENT[activeTab]}
-            </div>
+          {/* Log lines */}
+          <div style={{ padding: '16px 18px', overflowX: 'auto' }}>
+            {lines.map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  animation: `termLine 300ms ease both`,
+                  animationDelay: `${line.delay}ms`,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {line.content}
+              </div>
+            ))}
           </div>
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: '14px', color: '#8b949e', marginTop: '24px' }}>
+          Set it up once. Tapwire announces every win, instantly.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+// ── Use Cases ─────────────────────────────────────────────────────────────────
+
+const USE_CASES = [
+  {
+    icon: <TrendingUp style={{ width: 18, height: 18 }} />,
+    title: 'Signal providers & traders',
+    points: [
+      'Auto-announce TP hits with celebration GIFs',
+      'Relay signals between free and VIP channels',
+      'Scheduled market-open and recap posts',
+    ],
+  },
+  {
+    icon: <Play style={{ width: 18, height: 18 }} />,
+    title: 'Marketers',
+    points: [
+      'Scheduled campaigns across every channel at once',
+      'Keyword-triggered replies in your groups',
+      'Consistent templates — same voice, every post',
+    ],
+  },
+  {
+    icon: <MessageSquare style={{ width: 18, height: 18 }} />,
+    title: 'Community managers',
+    points: [
+      'Welcome and info posts on a schedule',
+      'FAQ auto-answers for repeat questions',
+      'Cross-post announcements to every community',
+    ],
+  },
+]
+
+function UseCases() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+
+  return (
+    <section id="use-cases" style={{ background: L.bg, padding: '96px 0' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
+            USE CASES
+          </p>
+          <h2
+            style={{
+              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontWeight: 800,
+              color: L.text,
+              letterSpacing: '-0.025em',
+              marginBottom: '12px',
+            }}
+          >
+            Built for the people who run channels
+          </h2>
+          <p style={{ fontSize: '16px', color: L.textMuted }}>Same builder. Three very different jobs done.</p>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '16px',
+          }}
+        >
+          {USE_CASES.map((uc, i) => (
+            <div
+              key={i}
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
+              style={{
+                background: L.surface,
+                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
+                borderRadius: '12px',
+                padding: '28px',
+                cursor: 'default',
+                transition: 'all 0.2s ease',
+                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
+              }}
+            >
+              <div
+                style={{
+                  width: 40, height: 40,
+                  borderRadius: '10px',
+                  background: L.accentDim,
+                  border: `1px solid ${L.accentBorder}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: L.accent,
+                  marginBottom: '16px',
+                }}
+              >
+                {uc.icon}
+              </div>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: L.text, marginBottom: '14px' }}>{uc.title}</h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {uc.points.map((p) => (
+                  <li key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <Check style={{ width: 14, height: 14, flexShrink: 0, marginTop: '3px', color: L.accent }} />
+                    <span style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.6 }}>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -867,67 +979,48 @@ function CliSection() {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function Pricing() {
-  const [annual, setAnnual] = useState(false)
   const navigate = useNavigate()
 
   const tiers = [
     {
       name: 'Free',
-      price: 0,
-      annualPrice: 0,
-      desc: 'Try it on your main channels',
+      price: 'Free',
+      badge: null as string | null,
+      desc: 'Run your first automations today',
       features: [
         '3 channels',
-        '30-day history',
-        'Win rate & R:R',
-        'Signal feed',
+        '5 automations',
+        'Chat workspace & templates',
+        'Trading triggers (TP/SL)',
+        'Community support',
       ],
-      missing: ['Entry accuracy', 'MT5 integration', 'CSV export'],
-      cta: 'Start Free',
+      cta: 'Get started',
       action: () => navigate('/register'),
+      disabled: false,
       featured: false,
     },
     {
       name: 'Pro',
-      price: 19,
-      annualPrice: 15,
-      desc: 'For traders who want the full picture',
-      features: [
-        '25 channels',
-        'Unlimited history',
-        'All metrics incl. entry accuracy',
-        'MT5 copy integration',
-        'Telegram notifications',
-        'CSV export',
-      ],
-      missing: [],
-      cta: 'Start Pro Trial',
-      action: () => navigate('/register'),
-      featured: true,
-    },
-    {
-      name: 'Team',
-      price: 79,
-      annualPrice: 65,
-      desc: 'For prop firms and signal services',
+      price: '£19',
+      badge: 'Early access — coming soon',
+      desc: 'For channels that run a business',
       features: [
         'Unlimited channels',
-        'Unlimited history',
-        'All Pro features',
+        'Unlimited automations',
+        'Priority polling',
+        'Webhooks',
         'API access',
-        'White-label reports',
-        'Priority support',
       ],
-      missing: [],
-      cta: 'Contact Sales',
+      cta: 'Coming soon',
       action: () => {},
-      featured: false,
+      disabled: true,
+      featured: true,
     },
   ]
 
   return (
     <section id="pricing" style={{ background: L.surface, padding: '96px 0' }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
             PRICING
@@ -943,58 +1036,12 @@ function Pricing() {
           >
             Simple pricing
           </h2>
-          <p style={{ fontSize: '16px', color: L.textMuted, marginBottom: '24px' }}>
-            Start free. Upgrade when you're ready.
+          <p style={{ fontSize: '16px', color: L.textMuted }}>
+            Start free. Upgrade when your channels outgrow it.
           </p>
-
-          {/* Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '14px', color: annual ? L.textFaint : L.text }}>Monthly</span>
-            <button
-              onClick={() => setAnnual((a) => !a)}
-              style={{
-                position: 'relative',
-                width: '44px', height: '24px',
-                borderRadius: '999px',
-                border: 'none',
-                cursor: 'pointer',
-                background: annual ? L.accent : L.surface2,
-                transition: 'background 0.2s',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '4px',
-                  left: annual ? '24px' : '4px',
-                  width: '16px', height: '16px',
-                  borderRadius: '50%',
-                  background: '#ffffff',
-                  transition: 'left 0.2s',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                }}
-              />
-            </button>
-            <span style={{ fontSize: '14px', color: annual ? L.text : L.textFaint }}>
-              Annual{' '}
-              <span
-                style={{
-                  display: 'inline-flex',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  background: 'rgba(22,163,74,0.1)',
-                  color: L.win,
-                  fontSize: '11px',
-                  fontWeight: 600,
-                }}
-              >
-                2 months free
-              </span>
-            </span>
-          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
           {tiers.map((tier) => (
             <div
               key={tier.name}
@@ -1009,7 +1056,7 @@ function Pricing() {
                 boxShadow: tier.featured ? `0 0 40px rgba(0,196,154,0.12)` : '0 1px 4px rgba(0,0,0,0.04)',
               }}
             >
-              {tier.featured && (
+              {tier.badge && (
                 <div
                   style={{
                     position: 'absolute',
@@ -1025,7 +1072,7 @@ function Pricing() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Most Popular
+                  {tier.badge}
                 </div>
               )}
 
@@ -1043,17 +1090,12 @@ function Pricing() {
                       lineHeight: 1,
                     }}
                   >
-                    {tier.price === 0 ? 'Free' : `£${annual ? tier.annualPrice : tier.price}`}
+                    {tier.price}
                   </span>
-                  {tier.price > 0 && (
+                  {tier.price !== 'Free' && (
                     <span style={{ fontSize: '14px', color: L.textMuted, paddingBottom: '4px' }}>/mo</span>
                   )}
                 </div>
-                {annual && tier.price > 0 && (
-                  <p style={{ fontSize: '12px', color: L.textFaint, marginTop: '4px', fontFamily: L.mono }}>
-                    billed £{tier.annualPrice * 12}/year
-                  </p>
-                )}
               </div>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, flex: 1, marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1068,31 +1110,24 @@ function Pricing() {
                     <span style={{ fontSize: '14px', color: L.text }}>{f}</span>
                   </li>
                 ))}
-                {tier.missing.map((f) => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', opacity: 0.35 }}>
-                    <div style={{ width: 14, height: 14, flexShrink: 0, marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 10, height: '1px', background: L.textFaint }} />
-                    </div>
-                    <span style={{ fontSize: '14px', color: L.textFaint }}>{f}</span>
-                  </li>
-                ))}
               </ul>
 
               <button
                 onClick={tier.action}
+                disabled={tier.disabled}
                 style={{
                   width: '100%',
                   padding: '12px',
                   borderRadius: '8px',
                   fontWeight: 600,
                   fontSize: '14px',
-                  cursor: 'pointer',
+                  cursor: tier.disabled ? 'default' : 'pointer',
                   border: tier.featured ? 'none' : `1px solid ${L.border}`,
-                  background: tier.featured ? L.accent : L.surface,
-                  color: tier.featured ? '#ffffff' : L.text,
+                  background: tier.disabled ? L.surface2 : tier.featured ? L.accent : L.accent,
+                  color: tier.disabled ? L.textFaint : '#ffffff',
                   transition: 'opacity 0.15s',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseEnter={e => { if (!tier.disabled) e.currentTarget.style.opacity = '0.85' }}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
                 {tier.cta}
@@ -1105,97 +1140,104 @@ function Pricing() {
   )
 }
 
-// ── Testimonials ──────────────────────────────────────────────────────────────
+// ── FAQ ───────────────────────────────────────────────────────────────────────
 
-function Testimonials() {
-  const quotes = [
-    {
-      quote: 'I was following 8 channels thinking they were all decent. Tapwire showed 6 of them had sub-40% win rates. Dropped them immediately.',
-      name: 'James K.',
-      role: 'Retail FX trader, 4 years',
-      stars: 5,
-    },
-    {
-      quote: 'The R:R tracking is what sold me. I realised my best channel had a 70% win rate but R:R of 0.4. I was actually losing money following signals that won most of the time.',
-      name: 'Sarah M.',
-      role: 'Crypto & commodities trader',
-      stars: 5,
-    },
-    {
-      quote: 'Setup took 5 minutes. Now I have a clean leaderboard of all my channels. The tier system makes it instant to see who is actually delivering.',
-      name: 'Tom R.',
-      role: 'Part-time futures trader',
-      stars: 5,
-    },
-  ]
+const FAQ_ITEMS = [
+  {
+    q: 'Do I need to code?',
+    a: 'No. Rules are built on a visual canvas — drag a trigger, add a condition, pick an action. If you can describe what you want ("when a TP hits, post this GIF"), you can build it.',
+  },
+  {
+    q: 'How does posting work?',
+    a: 'Through your own bot. Create one with BotFather in Telegram, paste the token into Tapwire, and add the bot to your channels. Posts come from your bot, under your name — you stay in control and can revoke access any time.',
+  },
+  {
+    q: 'Can Tapwire read my channels?',
+    a: 'The watcher reads the channels you add — that’s what powers triggers like keyword matches and TP/SL detection. If you prefer not to connect a watcher, you can drive everything by webhooks instead.',
+  },
+  {
+    q: 'What about GIFs and media?',
+    a: 'Upload a file or paste a URL when you save a template. Tapwire sends GIFs, images, and videos natively, so they play inline in Telegram like any normal post.',
+  },
+  {
+    q: 'Can my trading system trigger posts?',
+    a: 'Yes. Every automation can expose a webhook URL. One curl from your EA, bot, or script — with the pair, TP level, and pips in the payload — and the post goes out.',
+  },
+  {
+    q: 'Is there an API?',
+    a: 'Webhook ingest is available now: fire any automation from any system over HTTP. A full read/write API is on the roadmap and ships with the Pro plan.',
+  },
+]
+
+function Faq() {
+  const [openIdx, setOpenIdx] = useState<number | null>(0)
 
   return (
-    <section style={{ background: L.bg, padding: '88px 0' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+    <section id="faq" style={{ background: L.bg, padding: '96px 0' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
+            FAQ
+          </p>
           <h2
             style={{
-              fontSize: 'clamp(24px, 3vw, 36px)',
+              fontSize: 'clamp(28px, 3.5vw, 40px)',
               fontWeight: 800,
               color: L.text,
               letterSpacing: '-0.025em',
             }}
           >
-            Traders who stopped guessing
+            Questions, answered
           </h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-          {quotes.map((q) => (
-            <div
-              key={q.name}
-              style={{
-                background: L.surface,
-                border: `1px solid ${L.border}`,
-                borderRadius: '12px',
-                padding: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              }}
-            >
-              <div style={{ display: 'flex', gap: '2px' }}>
-                {Array.from({ length: q.stars }).map((_, i) => (
-                  <span key={i} style={{ color: '#f59e0b', fontSize: '14px' }}>★</span>
-                ))}
-              </div>
-              <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.75, flex: 1 }}>
-                "{q.quote}"
-              </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {FAQ_ITEMS.map((item, i) => {
+            const open = openIdx === i
+            return (
               <div
+                key={i}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  paddingTop: '14px',
-                  borderTop: `1px solid ${L.border}`,
+                  background: L.surface,
+                  border: `1px solid ${open ? L.accentBorder : L.border}`,
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.2s ease',
                 }}
               >
-                <div
+                <button
+                  onClick={() => setOpenIdx(open ? null : i)}
                   style={{
-                    width: 32, height: 32,
-                    borderRadius: '50%',
-                    background: L.accentDim,
-                    border: `1px solid ${L.accentBorder}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: L.accent,
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    flexShrink: 0,
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    padding: '18px 20px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
                   }}
                 >
-                  {q.name[0]}
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: L.text }}>{q.name}</div>
-                  <div style={{ fontSize: '12px', color: L.textFaint }}>{q.role}</div>
-                </div>
+                  <span style={{ fontSize: '15px', fontWeight: 600, color: L.text }}>{item.q}</span>
+                  <ChevronDown
+                    style={{
+                      width: 16, height: 16, flexShrink: 0,
+                      color: open ? L.accent : L.textFaint,
+                      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                    }}
+                  />
+                </button>
+                {open && (
+                  <div style={{ padding: '0 20px 18px' }}>
+                    <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.7, margin: 0 }}>{item.a}</p>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
@@ -1224,10 +1266,10 @@ function FinalCta() {
           marginBottom: '14px',
         }}
       >
-        Start monitoring in 5 minutes
+        Your channels, on autopilot
       </h2>
       <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginBottom: '36px' }}>
-        Free plan. No card. Works with any Telegram channel.
+        Connect your channels, build a rule, and let Tapwire do the posting. Free plan, no card.
       </p>
       <button
         onClick={() => navigate('/register')}
@@ -1249,7 +1291,7 @@ function FinalCta() {
         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.18)' }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)' }}
       >
-        Start Free <ArrowRight style={{ width: 16, height: 16 }} />
+        Get started free <ArrowRight style={{ width: 16, height: 16 }} />
       </button>
     </section>
   )
@@ -1286,7 +1328,7 @@ function Footer() {
           </svg>
           <div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: L.text }}>Tapwire</div>
-            <div style={{ fontSize: '11px', color: L.textFaint }}>Telegram intelligence platform</div>
+            <div style={{ fontSize: '11px', color: L.textFaint }}>Telegram channel automation</div>
           </div>
         </div>
 
@@ -1318,11 +1360,12 @@ export default function Landing() {
     <div style={{ background: L.bg, color: L.text, overflowX: 'hidden' }}>
       <Nav />
       <Hero />
-      <UseCases />
       <HowItWorks />
-      <CliSection />
+      <Features />
+      <LiveExample />
+      <UseCases />
       <Pricing />
-      <Testimonials />
+      <Faq />
       <FinalCta />
       <Footer />
     </div>

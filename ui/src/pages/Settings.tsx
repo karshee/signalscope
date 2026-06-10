@@ -4,16 +4,16 @@ import { AppShell } from '../components/layout/AppShell'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { useAuthStore } from '../lib/auth'
-import { api } from '../lib/api'
+import { api, type WebhookToken } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 
-type Tab = 'account' | 'telegram' | 'mt5' | 'notifications' | 'billing'
+type Tab = 'account' | 'telegram' | 'webhooks' | 'notifications' | 'billing'
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'account', label: 'Account' },
   { key: 'telegram', label: 'Telegram' },
-  { key: 'mt5', label: 'MT5' },
+  { key: 'webhooks', label: 'Webhooks' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'billing', label: 'Billing' },
 ]
@@ -216,9 +216,94 @@ function TelegramTab() {
             ? 'Checking…'
             : 'Stopped'
 
+  // ── Posting bot (write credential) ──────────────────────────────────────────
+  const [botToken, setBotToken] = useState('')
+  const [botMasked, setBotMasked] = useState<string | null>(null)
+  const [botSaving, setBotSaving] = useState(false)
+  const [botTesting, setBotTesting] = useState(false)
+  const [botStatus, setBotStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.settings.get().then((res) => {
+      setBotMasked(res.data?.telegram?.bot_token_masked ?? null)
+    }).catch(() => {})
+  }, [])
+
+  const saveBotToken = async () => {
+    if (!botToken.trim()) return
+    setBotSaving(true)
+    try {
+      await api.settings.update({ telegram: { bot_token: botToken.trim() } })
+      const res = await api.settings.get()
+      setBotMasked(res.data?.telegram?.bot_token_masked ?? null)
+      setBotToken('')
+      toast('Bot token saved', 'success')
+    } catch {
+      toast('Failed to save bot token', 'error')
+    } finally {
+      setBotSaving(false)
+    }
+  }
+
+  const testBot = async () => {
+    setBotTesting(true)
+    setBotStatus(null)
+    try {
+      const res = await api.settings.testBot()
+      setBotStatus(res.data.message)
+      toast(res.data.message, res.data.connected ? 'success' : 'error')
+    } catch {
+      toast('Bot test failed', 'error')
+    } finally {
+      setBotTesting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-lg">
-      <Section title="Watcher Status">
+      <Section title="Posting Bot (sends your messages)">
+        <p className="text-[var(--text-muted)] mb-4" style={{ fontSize: 'var(--text-sm)' }}>
+          Tapwire posts to your channels through your own Telegram bot. Two-minute setup:
+        </p>
+        <ol className="list-decimal list-inside space-y-1.5 mb-5"
+          style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+          <li>Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer"
+            className="text-[var(--accent)] hover:underline">@BotFather</a> and send <code className="font-mono">/newbot</code></li>
+          <li>Copy the token it gives you and paste it below</li>
+          <li>Add your bot as an <strong>admin</strong> in every channel it should post to</li>
+        </ol>
+        {botMasked && (
+          <div className="flex items-center gap-2 mb-3 p-3 rounded-[var(--radius-md)]"
+            style={{ background: 'var(--surface-2)' }}>
+            <CheckCircle className="w-4 h-4 text-[var(--win)] flex-shrink-0" />
+            <span className="font-mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+              Token saved: {botMasked}
+            </span>
+          </div>
+        )}
+        <div className="flex flex-col gap-3">
+          <Input
+            label={botMasked ? 'Replace bot token' : 'Bot token'}
+            type="password"
+            value={botToken}
+            onChange={(e) => setBotToken(e.target.value)}
+            placeholder="123456789:AAH-your-bot-token"
+          />
+          <div className="flex gap-2">
+            <Button onClick={saveBotToken} loading={botSaving} disabled={!botToken.trim()}>
+              Save Token
+            </Button>
+            <Button variant="ghost" onClick={testBot} loading={botTesting} disabled={!botMasked && !botToken}>
+              Verify Bot
+            </Button>
+          </div>
+          {botStatus && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{botStatus}</p>
+          )}
+        </div>
+      </Section>
+
+      <Section title="Reading (watches your channels)">
         <div className="flex items-center gap-2 mb-5 p-3 rounded-[var(--radius-md)]"
           style={{ background: 'var(--surface-2)' }}>
           <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', dotClass)} />
@@ -260,127 +345,100 @@ function TelegramTab() {
   )
 }
 
-// ── MT5 Tab ───────────────────────────────────────────────────────────────────
+// ── Webhooks Tab ──────────────────────────────────────────────────────────────
 
-function Mt5Tab() {
+function WebhooksTab() {
   const { toast } = useToast()
-  const [enabled, setEnabled] = useState(false)
-  const [login, setLogin] = useState('')
-  const [password, setPassword] = useState('')
-  const [server, setServer] = useState('')
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<'ok' | 'fail' | null>(null)
-  const [riskPct, setRiskPct] = useState('1')
-  const [copyMode, setCopyMode] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [tokens, setTokens] = useState<WebhookToken[]>([])
+  const [name, setName] = useState('')
+  const [creating, setCreating] = useState(false)
 
-  const handleTest = async () => {
-    setTesting(true)
-    setTestResult(null)
+  const load = () => api.webhooks.list().then((res) => setTokens(res.data)).catch(() => {})
+  useEffect(() => { load() }, [])
+
+  const create = async () => {
+    if (!name.trim()) return
+    setCreating(true)
     try {
-      await api.settings.testMt5()
-      setTestResult('ok')
-      toast('MT5 connection OK', 'success')
+      await api.webhooks.create(name.trim())
+      setName('')
+      await load()
+      toast('Webhook created', 'success')
     } catch {
-      setTestResult('fail')
-      toast('MT5 connection failed', 'error')
+      toast('Failed to create webhook', 'error')
     } finally {
-      setTesting(false)
+      setCreating(false)
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await api.settings.update({ mt5: { enabled, login, password, server, risk_pct: riskPct, copy_mode: copyMode } })
-      toast('MT5 settings saved', 'success')
-    } catch {
-      toast('Failed to save MT5 settings', 'error')
-    } finally {
-      setSaving(false)
-    }
+  const rotate = async (id: string) => {
+    await api.webhooks.rotate(id)
+    await load()
+    toast('Token rotated — update your integrations', 'success')
   }
+
+  const remove = async (id: string) => {
+    await api.webhooks.delete(id)
+    await load()
+  }
+
+  const curlFor = (token: string) =>
+    `curl -X POST ${window.location.origin}/api/webhooks/ingest/${token} \\
+  -H 'Content-Type: application/json' \\
+  -d '{"event": "tp_hit", "pair": "XAUUSD", "tp_level": 2, "pips": 150}'`
 
   return (
-    <div className="flex flex-col gap-6 max-w-lg">
-      <Section title="MT5 Integration">
-        {/* Enable toggle */}
-        <div className="flex items-center justify-between mb-5 p-3 rounded-[var(--radius-md)]"
-          style={{ background: 'var(--surface-2)' }}>
-          <div>
-            <div className="font-medium text-[var(--text)]" style={{ fontSize: 'var(--text-sm)' }}>
-              Enable MT5
-            </div>
-            <div className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-xs)' }}>
-              Connect to your MT5 account for live price tracking
-            </div>
-          </div>
-          <button
-            onClick={() => setEnabled((e) => !e)}
-            className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
-            style={{ background: enabled ? 'var(--accent)' : 'var(--surface-3)' }}
-          >
-            <div
-              className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all"
-              style={{ left: enabled ? '24px' : '4px' }}
-            />
-          </button>
+    <div className="flex flex-col gap-6 max-w-2xl">
+      <Section title="Inbound Webhooks">
+        <p className="text-[var(--text-muted)] mb-4" style={{ fontSize: 'var(--text-sm)' }}>
+          Let external systems (trade watchers, CRMs, scripts) trigger your automations.
+          Each POST becomes a <code className="font-mono">Webhook</code> event; body fields are
+          available in templates as <code className="font-mono">{'{webhook.field}'}</code>.
+        </p>
+        <div className="flex gap-2 mb-5">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name (e.g. signal-watcher)"
+            className="flex-1 px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            style={{ fontSize: 'var(--text-sm)' }}
+          />
+          <Button onClick={create} loading={creating} disabled={!name.trim()}>Create</Button>
         </div>
 
-        <div className={clsx('flex flex-col gap-4', !enabled && 'opacity-50 pointer-events-none')}>
-          <Input label="MT5 Login" value={login} onChange={(e) => setLogin(e.target.value)} placeholder="12345678" />
-          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-          <Input label="Server" value={server} onChange={(e) => setServer(e.target.value)} placeholder="ICMarkets-Demo" />
-        </div>
-      </Section>
-
-      <Section title="Risk Settings">
-        <div className={clsx('flex flex-col gap-4', !enabled && 'opacity-50 pointer-events-none')}>
-          <div>
-            <label className="text-[var(--text-muted)] font-medium block mb-1.5" style={{ fontSize: 'var(--text-sm)' }}>
-              Risk per trade (%)
-            </label>
-            <input
-              type="number"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={riskPct}
-              onChange={(e) => setRiskPct(e.target.value)}
-              className="w-32 px-3 py-2.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
-              style={{ fontSize: 'var(--text-base)', fontFamily: 'var(--font-mono)' }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-[var(--text)]" style={{ fontSize: 'var(--text-sm)' }}>
-                Copy mode
+        <div className="flex flex-col gap-4">
+          {tokens.map((t) => (
+            <div key={t.id} className="rounded-[var(--radius-md)] border border-[var(--border)] p-4"
+              style={{ background: 'var(--surface-2)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-[var(--text)]" style={{ fontSize: 'var(--text-sm)' }}>
+                  {t.name}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    navigator.clipboard.writeText(curlFor(t.token))
+                    toast('curl example copied', 'success')
+                  }}>Copy curl</Button>
+                  <Button variant="ghost" size="sm" onClick={() => rotate(t.id)}>Rotate</Button>
+                  <Button variant="danger" size="sm" onClick={() => remove(t.id)}>Delete</Button>
+                </div>
               </div>
-              <div className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-xs)' }}>
-                Auto-execute signals on your MT5 account
-              </div>
+              <pre className="overflow-x-auto p-3 rounded-[var(--radius-sm)] font-mono"
+                style={{ background: 'var(--bg)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                {curlFor(t.token)}
+              </pre>
+              {t.last_used_at && (
+                <div className="mt-2 text-[var(--text-faint)]" style={{ fontSize: 'var(--text-xs)' }}>
+                  Last used {new Date(t.last_used_at * 1000).toLocaleString()}
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setCopyMode((c) => !c)}
-              className="relative w-11 h-6 rounded-full transition-colors"
-              style={{ background: copyMode ? 'var(--accent)' : 'var(--surface-3)' }}
-            >
-              <div
-                className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all"
-                style={{ left: copyMode ? '24px' : '4px' }}
-              />
-            </button>
-          </div>
-
-          <div className="flex gap-2 pt-1">
-            <Button onClick={handleSave} loading={saving} disabled={!enabled}>Save</Button>
-            <Button variant="ghost" onClick={handleTest} loading={testing} disabled={!enabled}>
-              {testResult === 'ok' && <CheckCircle className="w-4 h-4 text-[var(--win)]" />}
-              {testResult === 'fail' && <AlertCircle className="w-4 h-4 text-[var(--loss)]" />}
-              Test Connection
-            </Button>
-          </div>
+          ))}
+          {tokens.length === 0 && (
+            <p className="text-[var(--text-faint)]" style={{ fontSize: 'var(--text-sm)' }}>
+              No webhooks yet.
+            </p>
+          )}
         </div>
       </Section>
     </div>
@@ -570,7 +628,7 @@ export default function Settings() {
         {/* Tab content */}
         {tab === 'account' && <AccountTab />}
         {tab === 'telegram' && <TelegramTab />}
-        {tab === 'mt5' && <Mt5Tab />}
+        {tab === 'webhooks' && <WebhooksTab />}
         {tab === 'notifications' && <NotificationsTab />}
         {tab === 'billing' && <BillingTab />}
       </div>

@@ -13,7 +13,7 @@ from backend.db.migrations import run_migrations
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
-    asyncio.get_event_loop().run_until_complete(run_migrations())
+    asyncio.run(run_migrations())
 
 
 @pytest.mark.asyncio

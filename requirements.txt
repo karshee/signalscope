@@ -6,7 +6,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.12
 pydantic[email]==2.8.2
-telethon==1.36.0
+telethon==1.43.2
 yfinance==0.2.43
 ccxt==4.3.98
 apscheduler==3.10.4

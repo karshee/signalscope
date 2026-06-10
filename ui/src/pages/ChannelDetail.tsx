@@ -8,6 +8,7 @@ import { RadarScore } from '../components/charts/RadarScore'
 import { WinRateChart } from '../components/charts/WinRateChart'
 import { PairHeatmap } from '../components/charts/PairHeatmap'
 import { QualityBadge } from '../components/channels/QualityBadge'
+import { channelGradient } from '../components/chat/ChannelList'
 import { SkeletonBlock, SkeletonLine } from '../components/ui/Skeleton'
 import { SignalBadge } from '../components/signals/SignalBadge'
 import { api, type Channel, type Signal, type ChannelScore } from '../lib/api'
@@ -111,7 +112,7 @@ export default function ChannelDetail() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-6 max-w-6xl mx-auto page-enter">
         {loading ? (
           <div className="flex flex-col gap-4">
             <SkeletonBlock height={100} />
@@ -120,15 +121,16 @@ export default function ChannelDetail() {
         ) : (
           <>
             {/* Channel header */}
-            <div
-              className="rounded-[var(--radius-lg)] border border-[var(--border)] p-6 mb-6"
-              style={{ background: 'var(--surface)' }}
-            >
+            <div className="glass rounded-[var(--radius-xl)] p-6 mb-6 shadow-[var(--shadow-md)]">
               <div className="flex flex-wrap items-start gap-5">
                 {/* Avatar */}
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-[var(--text-inverse)] flex-shrink-0"
-                  style={{ background: 'var(--accent)', fontSize: '22px' }}
+                  style={{
+                    background: channelGradient(channel?.title),
+                    fontSize: '22px',
+                    boxShadow: 'var(--accent-glow)',
+                  }}
                 >
                   {channel?.title?.[0]?.toUpperCase() || 'C'}
                 </div>
@@ -172,7 +174,7 @@ export default function ChannelDetail() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-6 border-b border-[var(--border)]">
+            <div className="flex gap-1 mb-6" style={{ borderBottom: '1px solid var(--divider)' }}>
               {tabs.map((t) => (
                 <button
                   key={t.key}
@@ -180,7 +182,7 @@ export default function ChannelDetail() {
                   className={clsx(
                     'px-4 py-2.5 font-medium transition-colors relative',
                     tab === t.key
-                      ? 'text-[var(--accent)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[var(--accent)]'
+                      ? 'text-[var(--accent)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:[background:var(--accent-gradient)] after:shadow-[0_0_12px_rgba(0,229,179,0.4)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text)]'
                   )}
                   style={{ fontSize: 'var(--text-sm)' }}
@@ -194,10 +196,7 @@ export default function ChannelDetail() {
             {tab === 'overview' && (
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* Radar */}
-                <div
-                  className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5"
-                  style={{ background: 'var(--surface)' }}
-                >
+                <div className="glass card-lift rounded-[var(--radius-lg)] p-5">
                   <h3 className="font-semibold text-[var(--text)] mb-4" style={{ fontSize: 'var(--text-md)' }}>
                     Performance Profile
                   </h3>
@@ -205,10 +204,7 @@ export default function ChannelDetail() {
                 </div>
 
                 {/* Win rate chart */}
-                <div
-                  className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5"
-                  style={{ background: 'var(--surface)' }}
-                >
+                <div className="glass card-lift rounded-[var(--radius-lg)] p-5">
                   <h3 className="font-semibold text-[var(--text)] mb-4" style={{ fontSize: 'var(--text-md)' }}>
                     Win Rate (12 weeks)
                   </h3>
@@ -224,11 +220,8 @@ export default function ChannelDetail() {
                 </div>
 
                 {/* Recent signals table */}
-                <div
-                  className="lg:col-span-2 rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-                  style={{ background: 'var(--surface)' }}
-                >
-                  <div className="px-5 py-4 border-b border-[var(--border)]">
+                <div className="glass lg:col-span-2 rounded-[var(--radius-lg)] overflow-hidden">
+                  <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
                     <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                       Recent Signals
                     </h3>
@@ -291,11 +284,8 @@ export default function ChannelDetail() {
             )}
 
             {tab === 'pairs' && (
-              <div
-                className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-                style={{ background: 'var(--surface)' }}
-              >
-                <div className="px-5 py-4 border-b border-[var(--border)]">
+              <div className="glass rounded-[var(--radius-lg)] overflow-hidden">
+                <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
                   <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                     Performance by Pair
                   </h3>
@@ -307,11 +297,8 @@ export default function ChannelDetail() {
             )}
 
             {tab === 'history' && (
-              <div
-                className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-                style={{ background: 'var(--surface)' }}
-              >
-                <div className="px-5 py-4 border-b border-[var(--border)]">
+              <div className="glass rounded-[var(--radius-lg)] overflow-hidden">
+                <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--divider)' }}>
                   <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                     Full Signal History
                   </h3>

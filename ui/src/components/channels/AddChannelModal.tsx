@@ -5,6 +5,7 @@ import { Button } from '../ui/Button'
 import { api } from '../../lib/api'
 import { useToast } from '../ui/Toast'
 import { CheckCircle, Radio } from 'lucide-react'
+import { channelGradient } from '../chat/ChannelList'
 
 interface AddChannelModalProps {
   isOpen: boolean
@@ -60,8 +61,16 @@ export function AddChannelModal({ isOpen, onClose, onAdded }: AddChannelModalPro
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Add Channel">
       <div className="flex flex-col gap-5">
-        <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
-          Enter a Telegram channel username or invite link to start tracking its signals.
+        <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)', lineHeight: 1.6 }}>
+          Enter a Telegram channel username or invite link — for example{' '}
+          <span className="font-mono text-[var(--accent)]" style={{ fontSize: 'var(--text-xs)' }}>
+            @channelname
+          </span>{' '}
+          or{' '}
+          <span className="font-mono text-[var(--accent)]" style={{ fontSize: 'var(--text-xs)' }}>
+            t.me/channelname
+          </span>
+          . We'll fetch a preview before anything is added.
         </p>
 
         <div className="flex gap-2">
@@ -86,12 +95,16 @@ export function AddChannelModal({ isOpen, onClose, onAdded }: AddChannelModalPro
 
         {preview && (
           <div
-            className="rounded-[var(--radius-md)] border border-[var(--accent)] p-4 flex items-center gap-3"
-            style={{ background: 'var(--accent-dim)' }}
+            className="rounded-[var(--radius-lg)] border border-[rgba(0,229,179,0.35)] p-4 flex items-center gap-3 msg-enter"
+            style={{ background: 'var(--accent-gradient-soft)', boxShadow: '0 2px 16px rgba(0, 229, 179, 0.1)' }}
           >
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-[var(--text-inverse)] flex-shrink-0"
-              style={{ background: 'var(--accent)', fontSize: '15px' }}
+              style={{
+                background: channelGradient(preview.title),
+                fontSize: '15px',
+                boxShadow: 'var(--accent-glow)',
+              }}
             >
               {preview.title[0]?.toUpperCase()}
             </div>
@@ -108,11 +121,13 @@ export function AddChannelModal({ isOpen, onClose, onAdded }: AddChannelModalPro
         )}
 
         {!preview && !loading && (
-          <div
-            className="rounded-[var(--radius-md)] p-4 flex items-center gap-3"
-            style={{ background: 'var(--surface-2)' }}
-          >
-            <Radio className="w-5 h-5 text-[var(--text-faint)]" />
+          <div className="glass rounded-[var(--radius-lg)] p-4 flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0 text-[var(--accent)] border border-[var(--border)]"
+              style={{ background: 'var(--accent-gradient-soft)' }}
+            >
+              <Radio className="w-4 h-4" />
+            </div>
             <span className="text-[var(--text-faint)]" style={{ fontSize: 'var(--text-sm)' }}>
               Channel preview will appear here after fetching
             </span>

@@ -9,6 +9,32 @@ export interface ChannelSnippet {
   posted_at: number
 }
 
+/* ── Deterministic per-channel gradient identity ─────────────────────────
+   Hash a channel title → one of 6 curated gradient pairs that sit well on
+   the "electric ink" palette. Shared by avatars + sender-name tints. */
+const AVATAR_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
+  ['#00e5b3', '#00b3ff'], // teal → cyan (brand)
+  ['#818cf8', '#00b3ff'], // indigo → cyan
+  ['#f472b6', '#818cf8'], // pink → indigo
+  ['#ffb224', '#ff5d6c'], // amber → coral
+  ['#34d97b', '#00e5b3'], // mint → teal
+  ['#00b3ff', '#9f7aff'], // cyan → violet
+]
+
+export function channelGradientPair(name?: string | null): readonly [string, string] {
+  const s = name || '#'
+  let hash = 0
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash * 31 + s.charCodeAt(i)) | 0
+  }
+  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
+}
+
+export function channelGradient(name?: string | null): string {
+  const [a, b] = channelGradientPair(name)
+  return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`
+}
+
 interface ChannelListProps {
   channels: Channel[]
   activeId: string | null
@@ -32,12 +58,23 @@ export function ChannelList({ channels, activeId, snippets, loading, onSelect, o
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] flex-shrink-0">
-        <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-          Channels
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-[var(--text)] tracking-tight" style={{ fontSize: 'var(--text-md)' }}>
+            Channels
+          </h2>
+          {!loading && channels.length > 0 && (
+            <span
+              className="px-1.5 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)] font-mono leading-none"
+              style={{ fontSize: 'var(--text-xs)', background: 'var(--surface-2)' }}
+            >
+              {channels.length}
+            </span>
+          )}
+        </div>
         <button
           onClick={onAdd}
-          className="p-1.5 rounded-[var(--radius-md)] text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--text-inverse)] transition-transform duration-150 hover:scale-110 flex-shrink-0"
+          style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--accent-glow)' }}
           title="Add channel"
         >
           <Plus className="w-4 h-4" />
@@ -45,7 +82,7 @@ export function ChannelList({ channels, activeId, snippets, loading, onSelect, o
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 py-1">
         {loading ? (
           <div className="flex flex-col gap-3 p-4">
             {[...Array(4)].map((_, i) => (
@@ -74,26 +111,48 @@ export function ChannelList({ channels, activeId, snippets, loading, onSelect, o
                 key={ch.id}
                 onClick={() => onSelect(ch.id)}
                 className={clsx(
-                  'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
-                  active ? 'bg-[var(--accent-dim)]' : 'hover:bg-[var(--surface-hover)]'
+                  'relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                  !active && 'hover:bg-[var(--surface-hover)]'
                 )}
+                style={
+                  active
+                    ? {
+                        background: 'var(--accent-gradient-soft)',
+                        boxShadow: 'inset 0 0 24px rgba(0, 229, 179, 0.06)',
+                      }
+                    : undefined
+                }
               >
+                {/* Accent bar for the active channel */}
+                {active && (
+                  <span
+                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
+                    style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--accent-glow)' }}
+                  />
+                )}
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[var(--text-inverse)] flex-shrink-0"
-                  style={{ background: 'var(--accent)', fontSize: '13px' }}
+                  style={{
+                    background: channelGradient(ch.title),
+                    fontSize: '13px',
+                    boxShadow: active ? 'var(--accent-glow)' : '0 1px 3px rgba(0,0,0,0.4)',
+                  }}
                 >
                   {ch.title?.[0]?.toUpperCase() || '#'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div
-                      className={clsx('font-medium truncate', active ? 'text-[var(--accent)]' : 'text-[var(--text)]')}
+                      className={clsx('font-semibold truncate', active ? 'text-[var(--accent)]' : 'text-[var(--text)]')}
                       style={{ fontSize: 'var(--text-sm)' }}
                     >
                       {ch.title}
                     </div>
                     {snippet && (
-                      <span className="flex-shrink-0 text-[var(--text-faint)]" style={{ fontSize: 'var(--text-xs)' }}>
+                      <span
+                        className="flex-shrink-0 text-[var(--text-faint)] font-mono"
+                        style={{ fontSize: 'var(--text-xs)' }}
+                      >
                         {relativeTime(snippet.posted_at)}
                       </span>
                     )}

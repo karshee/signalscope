@@ -40,38 +40,48 @@ const RATE_LIMITS = [5, 10, 30, 60]
 const flowOverrides = `
 .automation-flow .react-flow__pane { background: var(--bg); }
 .automation-flow .react-flow__controls {
-  background: var(--surface);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 .automation-flow .react-flow__controls-button {
-  background: var(--surface);
+  background: transparent;
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
   fill: var(--text-muted);
 }
 .automation-flow .react-flow__controls-button:hover {
   background: var(--surface-hover);
-  color: var(--text);
-  fill: var(--text);
+  color: var(--accent);
+  fill: var(--accent);
 }
 .automation-flow .react-flow__minimap {
-  background: var(--surface);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 .automation-flow .react-flow__attribution {
   background: transparent;
   color: var(--text-faint);
 }
-.automation-flow .react-flow__edge-path { stroke: var(--border-strong); stroke-width: 1.5; }
-.automation-flow .react-flow__edge.animated .react-flow__edge-path { stroke: var(--text-muted); }
-.automation-flow .react-flow__edge.selected .react-flow__edge-path { stroke: var(--accent); }
-.automation-flow .react-flow__connectionline { stroke: var(--accent); }
-.automation-flow .react-flow__handle.connectionindicator:hover { border-color: var(--accent); }
+.automation-flow .react-flow__edge-path { stroke: rgba(0, 229, 179, 0.6); stroke-width: 2; }
+.automation-flow .react-flow__edge.animated .react-flow__edge-path { stroke: rgba(0, 229, 179, 0.6); }
+.automation-flow .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--accent);
+  filter: drop-shadow(0 0 4px rgba(0, 229, 179, 0.55));
+}
+.automation-flow .react-flow__connectionline { stroke: var(--accent); stroke-width: 2; }
+.automation-flow .react-flow__handle:hover {
+  box-shadow: 0 0 0 2px rgba(238, 241, 251, 0.9), 0 0 10px rgba(0, 229, 179, 0.35) !important;
+}
 `
 
 interface Banner {
@@ -391,13 +401,10 @@ function EditorInner() {
       <style>{flowOverrides}</style>
 
       {/* top bar */}
-      <div
-        className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border)] flex-shrink-0 flex-wrap"
-        style={{ background: 'var(--surface)' }}
-      >
+      <div className="glass flex items-center gap-3 px-4 py-2.5 border-0 border-b border-[var(--border)] flex-shrink-0 flex-wrap">
         <button
           onClick={() => navigate('/app/automations')}
-          className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0"
+          className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0"
           title="Back to automations"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -406,21 +413,21 @@ function EditorInner() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Automation name"
-          className="px-2 py-1.5 rounded-[var(--radius-md)] border border-transparent bg-transparent text-[var(--text)] font-medium outline-none hover:border-[var(--border)] focus:border-[var(--accent)] focus:bg-[var(--bg)] w-56"
-          style={{ fontSize: 'var(--text-base)' }}
+          className="px-2 py-1.5 rounded-[var(--radius-md)] border border-transparent bg-transparent text-[var(--text)] outline-none hover:border-[var(--border)] focus:border-[var(--accent)] focus:bg-[var(--surface-2)] focus:shadow-[0_0_0_3px_rgba(0,229,179,0.12)] transition-all w-60"
+          style={{ fontSize: 'var(--text-md)', fontWeight: 600 }}
         />
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
-          className="flex-1 min-w-32 px-2 py-1.5 rounded-[var(--radius-md)] border border-transparent bg-transparent text-[var(--text-muted)] outline-none hover:border-[var(--border)] focus:border-[var(--accent)] focus:bg-[var(--bg)] hidden md:block"
+          className="flex-1 min-w-32 px-2 py-1.5 rounded-[var(--radius-md)] border border-transparent bg-transparent text-[var(--text-muted)] outline-none hover:border-[var(--border)] focus:border-[var(--accent)] focus:bg-[var(--surface-2)] focus:shadow-[0_0_0_3px_rgba(0,229,179,0.12)] transition-all hidden md:block"
           style={{ fontSize: 'var(--text-sm)' }}
         />
         <select
           value={rateLimit}
           onChange={(e) => setRateLimit(Number(e.target.value))}
           title="Rate limit"
-          className="px-2 py-1.5 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text-muted)] outline-none focus:border-[var(--accent)] flex-shrink-0"
+          className="px-3 py-1.5 rounded-[var(--radius-full)] border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-muted)] outline-none hover:border-[var(--accent)] hover:text-[var(--text)] focus:border-[var(--accent)] transition-colors flex-shrink-0 cursor-pointer"
           style={{ fontSize: 'var(--text-xs)' }}
         >
           {RATE_LIMITS.map((r) => (
@@ -432,7 +439,13 @@ function EditorInner() {
         <Button variant="ghost" size="sm" onClick={runTest} className="flex-shrink-0">
           <FlaskConical className="w-3.5 h-3.5" /> Test run
         </Button>
-        <Button size="sm" onClick={save} loading={saving} className="flex-shrink-0">
+        <Button
+          size="sm"
+          onClick={save}
+          loading={saving}
+          className="flex-shrink-0"
+          style={{ background: 'var(--accent-gradient)', boxShadow: 'var(--shadow-accent)' }}
+        >
           <Save className="w-3.5 h-3.5" /> Save
         </Button>
       </div>
@@ -494,7 +507,7 @@ function EditorInner() {
                 maxZoom={1.75}
                 style={{ background: 'var(--bg)' }}
               >
-                <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="rgba(255,255,255,0.09)" />
+                <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="rgba(74, 81, 112, 0.35)" />
                 <Controls position="bottom-left" />
                 <MiniMap
                   position="bottom-right"
@@ -508,20 +521,26 @@ function EditorInner() {
               {nodes.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div
-                    className="flex flex-col items-center gap-3 px-10 py-8 rounded-[var(--radius-xl)] border-2 border-dashed border-[var(--border-strong)]"
-                    style={{ background: 'rgba(17,17,20,0.6)' }}
+                    className="glass flex flex-col items-center gap-3.5 px-12 py-10 rounded-[var(--radius-xl)]"
+                    style={{ boxShadow: 'var(--shadow-lg)' }}
                   >
                     <span
-                      className="flex items-center justify-center rounded-full"
-                      style={{ width: 44, height: 44, background: 'var(--accent-dim)', color: 'var(--accent)' }}
+                      className="flex items-center justify-center rounded-[var(--radius-lg)] float-y"
+                      style={{
+                        width: 52,
+                        height: 52,
+                        background: 'var(--accent-gradient-soft)',
+                        color: 'var(--accent)',
+                        boxShadow: 'inset 0 0 0 1px rgba(0, 229, 179, 0.25), var(--accent-glow)',
+                      }}
                     >
-                      <Zap className="w-5 h-5" />
+                      <Zap className="w-6 h-6" />
                     </span>
-                    <div className="text-[var(--text)] font-medium" style={{ fontSize: 'var(--text-md)' }}>
-                      Drag a trigger to start
+                    <div className="text-[var(--text)]" style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>
+                      Drag a <span className="gradient-text">trigger</span> to start
                     </div>
-                    <div className="text-[var(--text-muted)] text-center max-w-60" style={{ fontSize: 'var(--text-sm)' }}>
-                      Every automation begins with one trigger, then conditions and actions flow down from it.
+                    <div className="text-[var(--text-muted)] text-center max-w-64 leading-relaxed" style={{ fontSize: 'var(--text-sm)' }}>
+                      Every automation begins with one trigger — conditions and actions flow down from it.
                     </div>
                   </div>
                 </div>

@@ -25,21 +25,34 @@ function dayLabel(epoch: number): string {
 
 function DaySeparator({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 my-2">
-      <div className="flex-1 h-px" style={{ background: 'var(--divider)' }} />
+    <div className="flex items-center justify-center my-2.5">
       <span
-        className="px-2.5 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)]"
-        style={{ fontSize: 'var(--text-xs)', background: 'var(--surface)' }}
+        className="glass px-3 py-1 rounded-full text-[var(--text-muted)] font-medium tracking-wide"
+        style={{ fontSize: 'var(--text-xs)' }}
       >
         {label}
       </span>
-      <div className="flex-1 h-px" style={{ background: 'var(--divider)' }} />
     </div>
   )
 }
 
 export function MessageThread({ messages, loading }: MessageThreadProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Track which message ids existed at initial load so only newly appended
+  // messages get the .msg-enter animation (visual only).
+  const knownIds = useRef<Set<string>>(new Set())
+  const hydrated = useRef(false)
+
+  useEffect(() => {
+    if (loading) {
+      hydrated.current = false
+      knownIds.current = new Set()
+      return
+    }
+    for (const m of messages) knownIds.current.add(m.id)
+    hydrated.current = true
+  }, [loading, messages])
 
   // Auto-scroll to bottom on load and when new messages arrive
   useEffect(() => {
@@ -49,7 +62,10 @@ export function MessageThread({ messages, loading }: MessageThreadProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+      <div
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-3"
+        style={{ background: 'var(--bg-raised)' }}
+      >
         {[...Array(5)].map((_, i) => (
           <div key={i} className={i % 2 ? 'flex justify-end' : 'flex justify-start'}>
             <SkeletonBlock height={52} width={i % 2 ? '45%' : '60%'} className="rounded-[var(--radius-lg)]" />
@@ -61,10 +77,13 @@ export function MessageThread({ messages, loading }: MessageThreadProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 px-8 text-center">
+      <div
+        className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 px-8 text-center"
+        style={{ background: 'var(--bg-raised)' }}
+      >
         <div
-          className="w-12 h-12 rounded-[var(--radius-xl)] flex items-center justify-center text-[var(--text-muted)]"
-          style={{ background: 'var(--surface-2)' }}
+          className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center text-[var(--accent)] border border-[var(--border)] float-y"
+          style={{ background: 'var(--accent-gradient-soft)' }}
         >
           <MessageSquare className="w-6 h-6" />
         </div>
@@ -83,11 +102,21 @@ export function MessageThread({ messages, loading }: MessageThreadProps) {
       items.push(<DaySeparator key={`sep-${msg.id}`} label={label} />)
       lastDay = label
     }
-    items.push(<MessageBubble key={msg.id} msg={msg} />)
+    items.push(
+      <MessageBubble
+        key={msg.id}
+        msg={msg}
+        animate={hydrated.current && !knownIds.current.has(msg.id)}
+      />
+    )
   }
 
   return (
-    <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-2">
+    <div
+      ref={containerRef}
+      className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-2"
+      style={{ background: 'var(--bg-raised)' }}
+    >
       {items}
     </div>
   )

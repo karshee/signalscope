@@ -16,8 +16,11 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
     <div className="flex flex-col items-center justify-center text-center py-16 px-8">
       {icon && (
         <div
-          className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center mb-4 text-[var(--text-muted)]"
-          style={{ background: 'var(--surface-2)' }}
+          className="w-16 h-16 rounded-[var(--radius-xl)] flex items-center justify-center mb-5 text-[var(--accent)] border border-[var(--border)] float-y"
+          style={{
+            background: 'var(--accent-gradient-soft)',
+            boxShadow: '0 0 32px rgba(0, 229, 179, 0.10)',
+          }}
         >
           {icon}
         </div>

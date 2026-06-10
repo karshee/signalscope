@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Trash2, X } from 'lucide-react'
-import { Button } from '../ui/Button'
+import { AlertCircle, Info, Trash2, X } from 'lucide-react'
 import type { Channel, MediaAsset, Template, WebhookToken } from '../../lib/api'
 import type { AutomationFlowNode } from './nodes'
 import {
@@ -40,7 +39,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const inputCls =
-  'w-full px-2.5 py-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] placeholder-[var(--text-faint)]'
+  'w-full px-2.5 py-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)] outline-none transition-all focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_rgba(0,229,179,0.12)] placeholder-[var(--text-faint)]'
 const inputStyle = { fontSize: 'var(--text-sm)' } as const
 
 function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -608,29 +607,36 @@ export function ConfigDrawer({
   const Form = FORMS[node.data.nodeType]
 
   return (
-    <div
-      className="w-80 flex-shrink-0 border-l border-[var(--border)] flex flex-col overflow-hidden"
-      style={{ background: 'var(--surface)' }}
-    >
+    <div className="glass w-80 flex-shrink-0 border-0 border-l border-[var(--border)] flex flex-col overflow-hidden">
       {/* header */}
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--border)]">
         <span
-          className="flex items-center justify-center rounded-[var(--radius-md)] flex-shrink-0"
-          style={{ width: 30, height: 30, background: colors.dim, color: colors.main }}
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: colors.dim,
+            color: colors.main,
+            boxShadow: `inset 0 0 0 1px ${colors.glow}`,
+          }}
         >
-          <Icon style={{ width: 15, height: 15 }} />
+          <Icon style={{ width: 16, height: 16 }} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)' }}>
+          <div className="text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
             {meta.label}
           </div>
-          <div className="uppercase tracking-wider" style={{ fontSize: 9, color: colors.main }}>
+          <div
+            className="uppercase tracking-wider"
+            style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.09em', color: colors.main, opacity: 0.9 }}
+          >
             {KIND_LABELS[meta.kind]}
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors"
+          className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors"
           title="Close"
         >
           <X className="w-4 h-4" />
@@ -639,16 +645,23 @@ export function ConfigDrawer({
 
       {/* body */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        <p className="text-[var(--text-muted)] leading-relaxed" style={{ fontSize: 'var(--text-xs)' }}>
-          {meta.help}
-        </p>
+        <div
+          className="flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2.5"
+          style={{ background: 'var(--surface-2)' }}
+        >
+          <Info className="flex-shrink-0 mt-0.5" style={{ width: 13, height: 13, color: 'var(--accent-2)' }} />
+          <p className="text-[var(--text-muted)] leading-relaxed" style={{ fontSize: 'var(--text-xs)' }}>
+            {meta.help}
+          </p>
+        </div>
 
         {node.data.error && (
           <div
-            className="rounded-[var(--radius-md)] border border-[var(--loss)] px-3 py-2 text-[var(--loss)]"
+            className="flex items-start gap-2 rounded-[var(--radius-md)] border border-[var(--loss)] px-3 py-2.5 text-[var(--loss)]"
             style={{ background: 'var(--loss-dim)', fontSize: 'var(--text-xs)' }}
           >
-            {node.data.error}
+            <AlertCircle className="flex-shrink-0 mt-0.5" style={{ width: 13, height: 13 }} />
+            <span className="leading-relaxed">{node.data.error}</span>
           </div>
         )}
 
@@ -667,9 +680,13 @@ export function ConfigDrawer({
 
       {/* footer */}
       <div className="px-4 py-3 border-t border-[var(--border)]">
-        <Button variant="danger" size="sm" className="w-full" onClick={() => onDelete(node.id)}>
+        <button
+          onClick={() => onDelete(node.id)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-transparent bg-transparent text-[var(--loss)] hover:bg-[var(--loss-dim)] hover:border-[var(--loss)] transition-colors font-medium"
+          style={{ fontSize: 'var(--text-xs)' }}
+        >
           <Trash2 className="w-3.5 h-3.5" /> Delete node
-        </Button>
+        </button>
       </div>
     </div>
   )

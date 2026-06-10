@@ -3,7 +3,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react'
 import { clsx } from 'clsx'
 import { AppShell } from '../components/layout/AppShell'
 import { AddChannelModal } from '../components/channels/AddChannelModal'
-import { ChannelList, type ChannelSnippet } from '../components/chat/ChannelList'
+import { ChannelList, channelGradient, type ChannelSnippet } from '../components/chat/ChannelList'
 import { MessageThread } from '../components/chat/MessageThread'
 import { Composer } from '../components/chat/Composer'
 import { useSignalFeed } from '../lib/websocket'
@@ -127,14 +127,19 @@ export default function Channels() {
 
   return (
     <AppShell connected={connected}>
-      <div className="flex h-full min-h-0">
+      <div className="flex h-full min-h-0 page-enter">
         {/* Left pane — channel list (full-width on mobile until a channel is picked) */}
         <div
           className={clsx(
-            'flex-col flex-shrink-0 w-full lg:w-72 border-r border-[var(--border)] min-h-0',
+            'flex-col flex-shrink-0 w-full lg:w-72 min-h-0',
             selectedId ? 'hidden lg:flex' : 'flex'
           )}
-          style={{ background: 'var(--surface)' }}
+          style={{
+            background: 'var(--glass)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            borderRight: '1px solid var(--divider)',
+          }}
         >
           <ChannelList
             channels={channels}
@@ -155,10 +160,15 @@ export default function Channels() {
         >
           {selected ? (
             <>
-              {/* Thread header */}
+              {/* Thread header — glass strip */}
               <div
-                className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] flex-shrink-0"
-                style={{ background: 'var(--surface)' }}
+                className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+                style={{
+                  background: 'var(--glass)',
+                  backdropFilter: 'blur(14px)',
+                  WebkitBackdropFilter: 'blur(14px)',
+                  borderBottom: '1px solid var(--divider)',
+                }}
               >
                 <button
                   onClick={() => setSelectedId(null)}
@@ -169,16 +179,29 @@ export default function Channels() {
                 </button>
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[var(--text-inverse)] flex-shrink-0"
-                  style={{ background: 'var(--accent)', fontSize: '12px' }}
+                  style={{
+                    background: channelGradient(selected.title),
+                    fontSize: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                  }}
                 >
                   {selected.title?.[0]?.toUpperCase() || '#'}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-medium text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)' }}>
-                    {selected.title}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="font-semibold text-[var(--text)] truncate" style={{ fontSize: 'var(--text-sm)' }}>
+                      {selected.title}
+                    </div>
+                    {connected && (
+                      <span
+                        className="pulse-dot w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ background: 'var(--accent)' }}
+                        title="Live feed connected"
+                      />
+                    )}
                   </div>
                   <div className="text-[var(--text-faint)] truncate" style={{ fontSize: 'var(--text-xs)' }}>
-                    @{selected.username}
+                    {selected.username ? `@${selected.username}` : 'Telegram channel'}
                   </div>
                 </div>
               </div>
@@ -194,14 +217,17 @@ export default function Channels() {
               />
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8 text-center">
+            <div
+              className="flex-1 flex flex-col items-center justify-center gap-3 px-8 text-center"
+              style={{ background: 'var(--bg-raised)' }}
+            >
               <div
-                className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center text-[var(--text-muted)]"
-                style={{ background: 'var(--surface-2)' }}
+                className="w-16 h-16 rounded-[var(--radius-xl)] flex items-center justify-center text-[var(--accent)] border border-[var(--border)] float-y"
+                style={{ background: 'var(--accent-gradient-soft)', boxShadow: 'var(--accent-glow)' }}
               >
                 <MessageSquare className="w-7 h-7" />
               </div>
-              <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-lg)' }}>
+              <h3 className="font-semibold text-[var(--text)] tracking-tight" style={{ fontSize: 'var(--text-lg)' }}>
                 Select a channel
               </h3>
               <p className="text-[var(--text-muted)] max-w-sm" style={{ fontSize: 'var(--text-sm)' }}>

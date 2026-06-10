@@ -23,12 +23,15 @@ export type AutomationFlowNode = Node<AutomationNodeData>
 /** Provided by the editor so node summaries can show channel/template names */
 export const LookupsContext = createContext<Lookups>(EMPTY_LOOKUPS)
 
-const handleStyle: React.CSSProperties = {
-  width: 9,
-  height: 9,
-  background: 'var(--surface-3)',
-  border: '1.5px solid var(--text-muted)',
-}
+/** Kind-colored handle dot — white hover ring is applied via the editor's flow CSS */
+const handleStyleFor = (color: string): React.CSSProperties => ({
+  width: 11,
+  height: 11,
+  background: color,
+  border: '2px solid var(--bg)',
+  boxShadow: '0 0 0 1px rgba(238, 241, 251, 0.18)',
+  transition: 'box-shadow 140ms ease',
+})
 
 function NodeShell({ kind, data, selected }: { kind: NodeKind; data: AutomationNodeData; selected?: boolean }) {
   const lookups = useContext(LookupsContext)
@@ -38,49 +41,85 @@ function NodeShell({ kind, data, selected }: { kind: NodeKind; data: AutomationN
   const summary = meta ? meta.summary(data.config ?? {}, lookups) : data.nodeType
   const hasError = Boolean(data.error)
 
-  const ring = hasError
-    ? '0 0 0 2px var(--loss)'
+  const borderColor = hasError ? 'var(--loss)' : selected ? colors.main : 'var(--border-strong)'
+  const shadow = hasError
+    ? '0 0 0 1px rgba(255, 93, 108, 0.35), 0 0 22px rgba(255, 93, 108, 0.28), var(--shadow-sm)'
     : selected
-      ? '0 0 0 2px var(--accent)'
+      ? `0 0 22px ${colors.glow}, var(--shadow-md)`
       : 'var(--shadow-sm)'
+
+  const handleStyle = handleStyleFor(colors.main)
 
   return (
     <div
-      className="rounded-[var(--radius-md)] border border-[var(--border-strong)] px-3 py-2.5"
+      className="glass relative"
       style={{
-        background: 'var(--surface)',
-        borderLeft: `3px solid ${colors.main}`,
-        boxShadow: ring,
-        width: 200,
-        transition: 'box-shadow 120ms ease',
+        borderRadius: 14,
+        border: `1px solid ${borderColor}`,
+        boxShadow: shadow,
+        width: 212,
+        padding: '11px 12px 10px',
+        transition: 'box-shadow 160ms ease, border-color 160ms ease',
       }}
       title={data.error}
     >
+      {/* faint top gradient strip, tinted by kind */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 14,
+          right: 14,
+          height: 2,
+          borderRadius: '0 0 2px 2px',
+          background: `linear-gradient(90deg, transparent, ${colors.main}, transparent)`,
+          opacity: hasError ? 0 : 0.55,
+          pointerEvents: 'none',
+        }}
+      />
+
       {kind !== 'trigger' && <Handle type="target" position={Position.Top} style={handleStyle} />}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <span
-          className="flex items-center justify-center rounded-[var(--radius-sm)] flex-shrink-0"
-          style={{ width: 22, height: 22, background: colors.dim, color: colors.main }}
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: colors.dim,
+            color: colors.main,
+            boxShadow: `inset 0 0 0 1px ${colors.glow}`,
+          }}
         >
-          {Icon && <Icon style={{ width: 13, height: 13 }} />}
+          {Icon && <Icon style={{ width: 14, height: 14 }} />}
         </span>
         <div className="min-w-0 flex-1">
           <div
-            className="font-medium text-[var(--text)] truncate leading-tight"
-            style={{ fontSize: 'var(--text-sm)' }}
+            className="text-[var(--text)] truncate leading-tight"
+            style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}
           >
             {meta?.label ?? data.nodeType}
           </div>
-          <div
-            className="uppercase tracking-wider leading-tight"
-            style={{ fontSize: 9, color: colors.main, opacity: 0.85 }}
+        </div>
+        {hasError ? (
+          <AlertCircle className="flex-shrink-0" style={{ width: 14, height: 14, color: 'var(--loss)' }} />
+        ) : (
+          <span
+            className="uppercase flex-shrink-0 select-none"
+            style={{
+              fontSize: 8.5,
+              fontWeight: 600,
+              letterSpacing: '0.09em',
+              padding: '2px 6px',
+              borderRadius: 'var(--radius-full)',
+              background: colors.dim,
+              color: colors.main,
+            }}
           >
             {KIND_LABELS[kind]}
-          </div>
-        </div>
-        {hasError && (
-          <AlertCircle className="flex-shrink-0" style={{ width: 14, height: 14, color: 'var(--loss)' }} />
+          </span>
         )}
       </div>
 

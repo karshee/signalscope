@@ -9,10 +9,10 @@ const tierConfig: Record<
   S: {
     label: 'S',
     description: 'Elite',
-    bg: 'var(--accent-dim)',
+    bg: 'var(--accent-gradient-soft)',
     text: 'var(--accent)',
     border: 'var(--accent)',
-    glow: '0 0 16px rgba(0,212,170,0.25)',
+    glow: '0 0 18px rgba(0,229,179,0.3)',
   },
   A: {
     label: 'A',
@@ -20,7 +20,7 @@ const tierConfig: Record<
     bg: 'var(--win-dim)',
     text: 'var(--win)',
     border: 'var(--win)',
-    glow: '0 0 16px rgba(34,197,94,0.2)',
+    glow: '0 0 16px rgba(52,217,123,0.22)',
   },
   B: {
     label: 'B',
@@ -36,7 +36,7 @@ const tierConfig: Record<
     bg: 'var(--active-dim)',
     text: 'var(--active)',
     border: 'var(--active)',
-    glow: '0 0 16px rgba(245,158,11,0.2)',
+    glow: '0 0 16px rgba(255,178,36,0.2)',
   },
   D: {
     label: 'D',
@@ -52,7 +52,7 @@ const tierConfig: Record<
     bg: 'var(--loss-dim)',
     text: 'var(--loss)',
     border: 'var(--loss)',
-    glow: '0 0 16px rgba(239,68,68,0.2)',
+    glow: '0 0 16px rgba(255,93,108,0.2)',
   },
 }
 

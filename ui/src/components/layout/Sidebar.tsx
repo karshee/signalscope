@@ -58,9 +58,20 @@ export function Sidebar({ collapsed = false, onClose }: SidebarProps) {
           <circle cx="16" cy="16" r="2.5" fill="var(--accent)" />
         </svg>
         {!collapsed && (
-          <span className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
-            Tapwire
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="font-bold gradient-text"
+              style={{ fontSize: 'var(--text-md)', letterSpacing: '-0.01em' }}
+            >
+              Tapwire
+            </span>
+            <span
+              className="px-1.5 py-0.5 rounded-full border border-[var(--border-strong)] text-[var(--accent)] font-semibold uppercase flex-shrink-0"
+              style={{ fontSize: '9px', letterSpacing: '0.06em', background: 'var(--accent-dim)' }}
+            >
+              beta
+            </span>
+          </div>
         )}
       </div>
 
@@ -73,14 +84,23 @@ export function Sidebar({ collapsed = false, onClose }: SidebarProps) {
             onClick={onClose}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-all duration-150 relative',
-                'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]',
+                'flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-all duration-200 relative',
+                'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] hover:translate-x-[2px]',
                 isActive && [
-                  'bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent-dim)] hover:text-[var(--accent)]',
-                  'before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-[var(--accent)] before:rounded-r',
+                  'text-[var(--accent)] hover:text-[var(--accent)] hover:bg-transparent hover:translate-x-0',
+                  'before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-6 before:rounded-r-full before:[background:var(--accent-gradient)]',
                 ],
                 collapsed && 'justify-center px-0'
               )
+            }
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: 'var(--accent-gradient-soft)',
+                    boxShadow:
+                      'inset 0 0 0 1px rgba(0, 229, 179, 0.14), 0 0 18px rgba(0, 229, 179, 0.08)',
+                  }
+                : undefined
             }
           >
             <Icon className="w-[18px] h-[18px] flex-shrink-0" />
@@ -97,16 +117,17 @@ export function Sidebar({ collapsed = false, onClose }: SidebarProps) {
       <div className="border-t border-[var(--border)] p-3">
         <div
           className={clsx(
-            'flex items-center gap-3',
-            collapsed && 'flex-col gap-2'
+            'glass rounded-[var(--radius-lg)] flex items-center gap-3',
+            collapsed ? 'flex-col gap-2 p-2' : 'p-2.5'
           )}
         >
           {/* Avatar */}
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-[var(--text-inverse)] font-semibold"
             style={{
-              background: 'var(--accent)',
+              background: 'var(--accent-gradient)',
               fontSize: 'var(--text-xs)',
+              boxShadow: '0 0 12px rgba(0, 229, 179, 0.25)',
             }}
           >
             {initials}

@@ -47,10 +47,7 @@ interface ChannelScorecardProps {
 
 export function ChannelScorecard({ score }: ChannelScorecardProps) {
   return (
-    <div
-      className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5 flex flex-col gap-4"
-      style={{ background: 'var(--surface)' }}
-    >
+    <div className="glass card-lift rounded-[var(--radius-lg)] p-5 flex flex-col gap-4">
       <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
         Performance Scorecard
       </h3>
@@ -66,7 +63,7 @@ export function ChannelScorecard({ score }: ChannelScorecardProps) {
           label="Avg R:R"
           value={score.avg_rr != null ? `${score.avg_rr.toFixed(2)}x` : '—'}
           pct={score.avg_rr != null ? Math.min(100, (score.avg_rr / 5) * 100) : 0}
-          color="var(--accent)"
+          color="var(--accent-gradient)"
         />
         <MetricRow
           label="Entry Accuracy"
@@ -82,7 +79,7 @@ export function ChannelScorecard({ score }: ChannelScorecardProps) {
         />
 
         {/* Signal count */}
-        <div className="pt-1 flex items-center justify-between border-t border-[var(--border)]">
+        <div className="pt-1 flex items-center justify-between" style={{ borderTop: '1px solid var(--divider)' }}>
           <span className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
             Total Signals
           </span>

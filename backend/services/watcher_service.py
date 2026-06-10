@@ -60,6 +60,7 @@ class WatcherService:
         self._monitor = ChannelMonitor(
             client=self._client,
             on_signal=self._on_signal,
+            on_message=self._on_message,
             poll_interval=float(os.getenv("WATCHER_POLL_INTERVAL", "5")),
         )
         await self._reload_channels()
@@ -129,6 +130,102 @@ class WatcherService:
                 logger.error(f"Watcher loop error: {e}", exc_info=True)
 
             await asyncio.sleep(poll_interval)
+
+    @staticmethod
+    def _media_type(msg) -> Optional[str]:
+        if getattr(msg, "gif", None):
+            return "animation"
+        if getattr(msg, "photo", None):
+            return "photo"
+        if getattr(msg, "video", None):
+            return "video"
+        if getattr(msg, "document", None):
+            return "document"
+        return None
+
+    async def _on_message(self, channel_id: str, info: dict, msg, events):
+        """Persist every incoming message for the chat UI, flag self-sent ones,
+        broadcast live, and hand the event to the automation engine."""
+        from backend.db.database import get_db
+        from backend.ws.manager import manager
+        from engine.events import Event, EVENT_MESSAGE
+        from engine.service import get_engine_service
+
+        text = msg.text or msg.message or getattr(msg, "caption", "") or ""
+        media_type = self._media_type(msg)
+        now = time.time()
+        posted_at = getattr(msg, "date", None)
+        posted_ts = posted_at.timestamp() if posted_at else now
+        sender_name = info.get("name") or ""
+
+        tid = info.get("telegram_id")
+        bot_chat_id = None
+        if tid and str(tid).lstrip("-").isdigit():
+            bot_chat_id = str(tid) if int(tid) < 0 else f"-100{tid}"
+
+        async with get_db() as db:
+            async with db.execute(
+                "SELECT user_id FROM channels WHERE id = ?", (channel_id,)
+            ) as cursor:
+                owner = await cursor.fetchone()
+            if not owner:
+                return
+            user_id = owner["user_id"]
+
+            is_self_sent = 0
+            if bot_chat_id:
+                async with db.execute(
+                    "SELECT 1 FROM sent_messages WHERE chat_id = ? AND telegram_message_id = ?",
+                    (bot_chat_id, msg.id),
+                ) as cursor:
+                    if await cursor.fetchone():
+                        is_self_sent = 1
+
+            row_id = str(uuid.uuid4())
+            cur = await db.execute(
+                """INSERT OR IGNORE INTO channel_messages
+                   (id, channel_id, message_id, sender_name, text, has_media,
+                    media_type, posted_at, is_self_sent)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (row_id, channel_id, msg.id, sender_name, text,
+                 1 if media_type else 0, media_type, posted_ts, is_self_sent),
+            )
+            inserted = cur.rowcount > 0
+            await db.commit()
+
+        if not inserted:  # redelivered message — already handled
+            return
+
+        payload = {
+            "id": row_id,
+            "channel_id": channel_id,
+            "message_id": msg.id,
+            "sender_name": sender_name,
+            "text": text,
+            "has_media": bool(media_type),
+            "media_type": media_type,
+            "posted_at": posted_ts,
+            "is_self_sent": bool(is_self_sent),
+        }
+        await manager.send_to_user(user_id, {"type": "channel_message", "data": payload})
+
+        get_engine_service().emit(Event(
+            type=EVENT_MESSAGE,
+            user_id=user_id,
+            channel_id=channel_id,
+            data={
+                "text": text,
+                "message_id": msg.id,
+                "channel_title": sender_name,
+                "has_media": bool(media_type),
+                "media_type": media_type,
+                "extracted": [
+                    {"extractor": e.extractor, "data": e.data, "confidence": e.confidence}
+                    for e in (events or [])
+                ],
+            },
+            meta={"self_sent": bool(is_self_sent), "source": "watcher"},
+        ))
 
     async def _on_signal(self, channel_id: str, events, raw_text: str, message_id: int):
         """Persist new signal events and broadcast to the channel owner via WebSocket."""

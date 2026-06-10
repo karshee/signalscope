@@ -17,9 +17,11 @@ class ChannelMonitor:
         on_signal: Callable,  # async callback(channel_id, events: list[ExtractedEvent], raw_text, message_id)
         poll_interval: float = 5.0,
         registry: Optional[ExtractorRegistry] = None,
+        on_message: Optional[Callable] = None,  # async callback(channel_id, info, msg, events) for EVERY message
     ):
         self.client = client
         self.on_signal = on_signal
+        self.on_message = on_message
         self.poll_interval = poll_interval
         self.registry = registry or ExtractorRegistry.default()
         self._channels: dict = {}  # channel_id -> {"name": str, "last_msg_id": int, "telegram_id": int}
@@ -71,15 +73,23 @@ class ChannelMonitor:
             if msg.id > max_id:
                 max_id = msg.id
             text = msg.text or msg.message or getattr(msg, "caption", "") or ""
-            if not text:
-                continue
 
-            try:
-                events = self.registry.process(text, channel_id=channel_id, message_id=msg.id)
-                if events:
-                    await self.on_signal(channel_id, events, text, msg.id)
-            except Exception as e:
-                logger.warning(f"Extract error: {e}")
+            events = []
+            if text:
+                try:
+                    events = self.registry.process(text, channel_id=channel_id, message_id=msg.id)
+                    if events:
+                        await self.on_signal(channel_id, events, text, msg.id)
+                except Exception as e:
+                    logger.warning(f"Extract error: {e}")
+
+            # Media-only messages matter too — the chat UI and automation
+            # triggers see every message, not just parseable ones.
+            if self.on_message:
+                try:
+                    await self.on_message(channel_id, info, msg, events)
+                except Exception as e:
+                    logger.warning(f"on_message error: {e}")
 
         if max_id > last_id:
             self._last_ids[key] = max_id

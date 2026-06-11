@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   X,
   Workflow,
+  ChevronRight,
 } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { SkeletonBlock, SkeletonLine } from '../components/ui/Skeleton'
@@ -66,6 +67,20 @@ function statusColor(status: string): string {
   }
 }
 
+function statusDim(status: string): string {
+  switch (status) {
+    case 'success':
+      return 'var(--win-dim)'
+    case 'error':
+    case 'rate_limited':
+      return 'var(--loss-dim)'
+    case 'dry_run':
+      return 'var(--accent-dim)'
+    default:
+      return 'var(--expired-dim)'
+  }
+}
+
 function statusLabel(status: string): string {
   switch (status) {
     case 'success':
@@ -97,17 +112,21 @@ function StatCard({
   value,
   sub,
   loading,
+  hero,
+  tint,
 }: {
   icon: React.ReactNode
   label: string
   value: string | number
   sub?: React.ReactNode
   loading?: boolean
+  hero?: boolean
+  tint?: string
 }) {
   return (
     <div
-      className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5"
-      style={{ background: 'var(--surface)' }}
+      className="glass rounded-[var(--radius-lg)] p-5 relative overflow-hidden"
+      style={tint ? { backgroundImage: `linear-gradient(150deg, ${tint}, transparent 55%)` } : undefined}
     >
       {loading ? (
         <div className="flex flex-col gap-2">
@@ -117,20 +136,20 @@ function StatCard({
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-[var(--text-muted)] pt-1.5" style={{ fontSize: 'var(--text-sm)' }}>
               {label}
             </span>
             <div
-              className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--accent)]"
-              style={{ background: 'var(--accent-dim)' }}
+              className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--accent)] border border-[var(--border)] flex-shrink-0"
+              style={{ background: 'var(--accent-gradient-soft)' }}
             >
               {icon}
             </div>
           </div>
           <div
-            className="font-bold text-[var(--text)] mb-1"
-            style={{ fontSize: 'var(--text-2xl)', fontFamily: 'var(--font-mono)' }}
+            className={hero ? 'gradient-text mb-1' : 'text-[var(--text)] mb-1'}
+            style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, letterSpacing: '-0.02em' }}
           >
             {value}
           </div>
@@ -157,11 +176,17 @@ function QuickAction({
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-hover)] hover:border-[var(--border-strong)] transition-colors"
-      style={{ fontSize: 'var(--text-sm)' }}
+      className="card-lift flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--radius-md)] border border-[var(--border)] text-[var(--text)]"
+      style={{ fontSize: 'var(--text-sm)', background: 'var(--surface-2)' }}
     >
-      <span className="text-[var(--accent)]">{icon}</span>
-      {label}
+      <span
+        className="w-8 h-8 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--accent)] border border-[var(--border)] flex-shrink-0"
+        style={{ background: 'var(--accent-gradient-soft)' }}
+      >
+        {icon}
+      </span>
+      <span className="flex-1 font-medium truncate">{label}</span>
+      <ChevronRight className="w-4 h-4 text-[var(--text-faint)] flex-shrink-0" />
     </Link>
   )
 }
@@ -237,7 +262,7 @@ export default function Dashboard() {
 
   return (
     <AppShell connected={connected}>
-      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto page-enter">
         {/* Rule auto-disabled warnings */}
         {alerts.map((a) => (
           <div
@@ -271,6 +296,8 @@ export default function Dashboard() {
               </Link>
             }
             loading={loading}
+            hero
+            tint="rgba(0, 229, 179, 0.08)"
           />
           <StatCard
             icon={<Activity className="w-4 h-4" />}
@@ -288,12 +315,14 @@ export default function Dashboard() {
               ) : undefined
             }
             loading={loading}
+            tint="rgba(0, 179, 255, 0.07)"
           />
           <StatCard
             icon={<Send className="w-4 h-4" />}
             label="Messages sent 7d"
             value={stats?.sent_7d ?? 0}
             loading={loading}
+            tint="rgba(129, 140, 248, 0.07)"
           />
           <StatCard
             icon={<Radio className="w-4 h-4" />}
@@ -305,22 +334,23 @@ export default function Dashboard() {
               </Link>
             }
             loading={loading}
+            tint="rgba(255, 178, 36, 0.06)"
           />
         </div>
 
         {/* First-run CTA — shown when user has no rules yet */}
         {!loading && rules.length === 0 && (
           <div
-            className="rounded-[var(--radius-lg)] border border-[var(--border)] p-8 text-center mb-6"
-            style={{ background: 'var(--surface)' }}
+            className="glass rounded-[var(--radius-xl)] p-8 text-center mb-6 relative overflow-hidden"
+            style={{ backgroundImage: 'var(--accent-gradient-soft)' }}
           >
             <div
-              className="w-14 h-14 rounded-[var(--radius-xl)] flex items-center justify-center mx-auto mb-4 text-[var(--accent)]"
-              style={{ background: 'var(--accent-dim)' }}
+              className="w-16 h-16 rounded-[var(--radius-xl)] flex items-center justify-center mx-auto mb-4 text-[var(--accent)] border border-[var(--border-strong)] float-y"
+              style={{ background: 'var(--accent-gradient-soft)' }}
             >
-              <Workflow className="w-7 h-7" />
+              <Workflow className="w-8 h-8" />
             </div>
-            <h2 className="font-bold text-[var(--text)] mb-2" style={{ fontSize: 'var(--text-xl)' }}>
+            <h2 className="text-[var(--text)] mb-2" style={{ fontSize: 'var(--text-xl)', fontWeight: 800 }}>
               Create your first automation
             </h2>
             <p
@@ -331,10 +361,11 @@ export default function Dashboard() {
             </p>
             <Link
               to="/app/automations/new"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] font-medium transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] font-semibold transition-opacity hover:opacity-90"
               style={{
-                background: 'var(--accent)',
+                background: 'var(--accent-gradient)',
                 color: 'var(--text-inverse)',
+                boxShadow: 'var(--shadow-accent)',
                 fontSize: 'var(--text-sm)',
               }}
             >
@@ -347,15 +378,18 @@ export default function Dashboard() {
         {/* Main grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Live activity feed — wider */}
-          <div
-            className="lg:col-span-2 rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-            style={{ background: 'var(--surface)' }}
-          >
+          <div className="lg:col-span-2 glass rounded-[var(--radius-lg)] overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--border)] flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--win)] pulse-dot" />
-              <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
+              <h2 className="font-bold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                 Live activity
               </h2>
+              <span
+                className="ml-auto uppercase tracking-widest text-[var(--text-faint)]"
+                style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+              >
+                live
+              </span>
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
               {loading ? (
@@ -400,17 +434,28 @@ export default function Dashboard() {
                           >
                             {e.rule_name || 'Unnamed rule'}
                           </div>
-                          <div
-                            className="text-[var(--text-muted)] truncate"
-                            style={{ fontSize: 'var(--text-xs)' }}
-                          >
-                            {statusLabel(e.status)}
-                            {e.status === 'error' && e.detail?.error ? ` — ${e.detail.error}` : ''}
-                          </div>
+                          {e.status === 'error' && e.detail?.error && (
+                            <div
+                              className="text-[var(--text-muted)] truncate"
+                              style={{ fontSize: 'var(--text-xs)' }}
+                            >
+                              {e.detail.error}
+                            </div>
+                          )}
                         </div>
                         <span
+                          className="px-2 py-0.5 rounded-full font-medium flex-shrink-0"
+                          style={{
+                            fontSize: 'var(--text-xs)',
+                            background: statusDim(e.status),
+                            color: statusColor(e.status),
+                          }}
+                        >
+                          {statusLabel(e.status)}
+                        </span>
+                        <span
                           className="px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)] flex-shrink-0"
-                          style={{ fontSize: 'var(--text-xs)' }}
+                          style={{ fontSize: 'var(--text-xs)', background: 'var(--surface-2)' }}
                         >
                           {eventLabel(e.event_type)}
                         </span>
@@ -425,7 +470,7 @@ export default function Dashboard() {
                         )}
                         <span
                           className="text-[var(--text-faint)] flex-shrink-0 w-16 text-right"
-                          style={{ fontSize: 'var(--text-xs)' }}
+                          style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
                         >
                           {timeAgo(e.created_at)}
                         </span>
@@ -440,12 +485,9 @@ export default function Dashboard() {
           {/* Right column */}
           <div className="flex flex-col gap-4">
             {/* Your automations */}
-            <div
-              className="rounded-[var(--radius-lg)] border border-[var(--border)]"
-              style={{ background: 'var(--surface)' }}
-            >
+            <div className="glass rounded-[var(--radius-lg)] overflow-hidden">
               <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
-                <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
+                <h2 className="font-bold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                   Your automations
                 </h2>
                 <Link
@@ -501,12 +543,9 @@ export default function Dashboard() {
             </div>
 
             {/* Quick actions */}
-            <div
-              className="rounded-[var(--radius-lg)] border border-[var(--border)]"
-              style={{ background: 'var(--surface)' }}
-            >
+            <div className="glass rounded-[var(--radius-lg)] overflow-hidden">
               <div className="px-5 py-4 border-b border-[var(--border)]">
-                <h2 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
+                <h2 className="font-bold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
                   Quick actions
                 </h2>
               </div>

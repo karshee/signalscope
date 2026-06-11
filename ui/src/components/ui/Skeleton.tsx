@@ -36,7 +36,7 @@ export function SkeletonCard({ className }: SkeletonProps) {
     <div
       className={clsx(
         'rounded-[var(--radius-lg)] border border-[var(--border)] p-4 flex flex-col gap-3',
-        'bg-[var(--surface)]',
+        'bg-[var(--glass)] backdrop-blur-[14px]',
         className
       )}
     >

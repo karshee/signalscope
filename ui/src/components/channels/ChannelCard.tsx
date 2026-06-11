@@ -3,6 +3,7 @@ import { MoreHorizontal, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Channel } from '../../lib/api'
 import { QualityBadge } from '../ui/Badge'
+import { channelGradient } from '../chat/ChannelList'
 
 interface ChannelCardProps {
   channel: Channel
@@ -22,9 +23,7 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
   return (
     <div
       className={clsx(
-        'rounded-[var(--radius-lg)] border border-[var(--border)] p-5',
-        'bg-[var(--surface)] hover:bg-[var(--surface-hover)] hover:border-[var(--border-strong)]',
-        'transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]',
+        'glass card-lift rounded-[var(--radius-lg)] p-5',
         'flex flex-col gap-4'
       )}
     >
@@ -33,7 +32,11 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
         {/* Avatar */}
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-[var(--text-inverse)]"
-          style={{ background: 'var(--accent)', fontSize: '15px' }}
+          style={{
+            background: channelGradient(channel.title),
+            fontSize: '15px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+          }}
         >
           {channel.title?.[0]?.toUpperCase() || 'C'}
         </div>
@@ -67,7 +70,8 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
               className="h-full rounded-full"
               style={{
                 width: `${channel.quality_score}%`,
-                background: 'var(--accent)',
+                background: 'var(--accent-gradient)',
+                boxShadow: '0 0 8px rgba(0, 229, 179, 0.35)',
               }}
             />
           </div>
@@ -81,7 +85,7 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
       )}
 
       {/* Divider */}
-      <div className="border-t border-[var(--border)]" />
+      <div style={{ borderTop: '1px solid var(--divider)' }} />
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -121,7 +125,7 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-[var(--border)]" />
+      <div style={{ borderTop: '1px solid var(--divider)' }} />
 
       {/* Footer */}
       <div className="flex items-center justify-between">
@@ -129,7 +133,7 @@ export function ChannelCard({ channel, onMenuClick }: ChannelCardProps) {
           <span
             className={clsx(
               'w-1.5 h-1.5 rounded-full',
-              channel.is_active ? 'bg-[var(--win)] pulse-dot' : 'bg-[var(--expired)]'
+              channel.is_active ? 'bg-[var(--accent)] pulse-dot' : 'bg-[var(--expired)]'
             )}
           />
           <span

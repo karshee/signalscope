@@ -37,10 +37,10 @@ export interface NodeMeta {
   summary: (config: Record<string, unknown>, lookups: Lookups) => string
 }
 
-export const KIND_COLORS: Record<NodeKind, { main: string; dim: string }> = {
-  trigger: { main: 'var(--accent)', dim: 'var(--accent-dim)' },
-  condition: { main: 'var(--active)', dim: 'var(--active-dim)' },
-  action: { main: 'var(--pending)', dim: 'var(--pending-dim)' },
+export const KIND_COLORS: Record<NodeKind, { main: string; dim: string; glow: string }> = {
+  trigger: { main: 'var(--node-trigger)', dim: 'var(--accent-dim)', glow: 'rgba(0, 229, 179, 0.30)' },
+  condition: { main: 'var(--node-condition)', dim: 'var(--active-dim)', glow: 'rgba(255, 178, 36, 0.30)' },
+  action: { main: 'var(--node-action)', dim: 'var(--pending-dim)', glow: 'rgba(129, 140, 248, 0.30)' },
 }
 
 export const KIND_LABELS: Record<NodeKind, string> = {

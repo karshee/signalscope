@@ -34,7 +34,7 @@ export function TopBar({ connected = false, onMenuClick }: TopBarProps) {
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[var(--border)] bg-[var(--surface)] flex-shrink-0"
+      className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 lg:px-6 border-b border-[var(--border)] bg-[var(--glass)] backdrop-blur-[14px] flex-shrink-0"
     >
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
@@ -54,13 +54,16 @@ export function TopBar({ connected = false, onMenuClick }: TopBarProps) {
 
       <div className="flex items-center gap-4">
         {/* Watcher status */}
-        <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)]"
+          title={connected ? 'Watcher connected' : 'Watcher disconnected'}
+        >
           <span
             className={`w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-[var(--win)] pulse-dot' : 'bg-[var(--loss)]'}`}
           />
           <span
-            className="text-[var(--text-muted)]"
-            style={{ fontSize: 'var(--text-sm)' }}
+            className="text-[var(--text-muted)] font-medium"
+            style={{ fontSize: 'var(--text-xs)', letterSpacing: '0.02em' }}
           >
             Watcher
           </span>
@@ -75,8 +78,9 @@ export function TopBar({ connected = false, onMenuClick }: TopBarProps) {
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-inverse)] font-semibold cursor-pointer select-none"
           style={{
-            background: 'var(--accent)',
+            background: 'var(--accent-gradient)',
             fontSize: 'var(--text-xs)',
+            boxShadow: '0 0 12px rgba(0, 229, 179, 0.25)',
           }}
           title={user?.name}
         >

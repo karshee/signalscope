@@ -32,23 +32,24 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
 
       {/* Modal content */}
       <div
         className={clsx(
           'relative z-10 w-full max-w-lg mx-4 rounded-[var(--radius-xl)] border border-[var(--border-strong)] shadow-[var(--shadow-lg)]',
-          'bg-[var(--surface)]',
+          'bg-[var(--glass)] backdrop-blur-[20px]',
           className
         )}
         style={{
-          animation: 'modalIn 200ms cubic-bezier(0.16,1,0.3,1) forwards',
+          animation: 'modalIn 320ms cubic-bezier(0.16,1,0.3,1) forwards',
         }}
       >
         <style>{`
           @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(8px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            0% { opacity: 0; transform: scale(0.92) translateY(16px); }
+            60% { opacity: 1; transform: scale(1.012) translateY(-2px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
           }
         `}</style>
         {/* Header */}

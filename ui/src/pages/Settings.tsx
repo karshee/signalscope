@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button'
 import { useAuthStore } from '../lib/auth'
 import { api, type WebhookToken } from '../lib/api'
 import { useToast } from '../components/ui/Toast'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle, Copy } from 'lucide-react'
 
 type Tab = 'account' | 'telegram' | 'webhooks' | 'notifications' | 'billing'
 
@@ -20,16 +20,43 @@ const tabs: { key: Tab; label: string }[] = [
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden"
-      style={{ background: 'var(--surface)' }}
-    >
+    <div className="glass rounded-[var(--radius-lg)] overflow-hidden">
       <div className="px-6 py-4 border-b border-[var(--border)]">
-        <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
+        <h3 className="font-bold text-[var(--text)]" style={{ fontSize: 'var(--text-md)' }}>
           {title}
         </h3>
       </div>
       <div className="p-6">{children}</div>
+    </div>
+  )
+}
+
+function SetupStep({
+  n,
+  last,
+  children,
+}: {
+  n: number
+  last?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center flex-shrink-0">
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center font-semibold text-[var(--accent)] border border-[var(--border-strong)] flex-shrink-0"
+          style={{ background: 'var(--accent-gradient-soft)', fontSize: 'var(--text-xs)' }}
+        >
+          {n}
+        </div>
+        {!last && <div className="w-px flex-1 my-1" style={{ background: 'var(--border-strong)' }} />}
+      </div>
+      <div
+        className={last ? 'pt-0.5' : 'pt-0.5 pb-4'}
+        style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -265,13 +292,18 @@ function TelegramTab() {
         <p className="text-[var(--text-muted)] mb-4" style={{ fontSize: 'var(--text-sm)' }}>
           Tapwire posts to your channels through your own Telegram bot. Two-minute setup:
         </p>
-        <ol className="list-decimal list-inside space-y-1.5 mb-5"
-          style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-          <li>Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer"
-            className="text-[var(--accent)] hover:underline">@BotFather</a> and send <code className="font-mono">/newbot</code></li>
-          <li>Copy the token it gives you and paste it below</li>
-          <li>Add your bot as an <strong>admin</strong> in every channel it should post to</li>
-        </ol>
+        <div className="flex flex-col mb-5">
+          <SetupStep n={1}>
+            Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer"
+              className="text-[var(--accent)] hover:underline">@BotFather</a> and send <code className="font-mono">/newbot</code>
+          </SetupStep>
+          <SetupStep n={2}>
+            Copy the token it gives you and paste it below
+          </SetupStep>
+          <SetupStep n={3} last>
+            Add your bot as an <strong>admin</strong> in every channel it should post to
+          </SetupStep>
+        </div>
         {botMasked && (
           <div className="flex items-center gap-2 mb-3 p-3 rounded-[var(--radius-md)]"
             style={{ background: 'var(--surface-2)' }}>
@@ -408,25 +440,33 @@ function WebhooksTab() {
 
         <div className="flex flex-col gap-4">
           {tokens.map((t) => (
-            <div key={t.id} className="rounded-[var(--radius-md)] border border-[var(--border)] p-4"
-              style={{ background: 'var(--surface-2)' }}>
-              <div className="flex items-center justify-between mb-2">
+            <div key={t.id} className="glass rounded-[var(--radius-lg)] p-4">
+              <div className="flex items-center justify-between mb-3">
                 <span className="font-medium text-[var(--text)]" style={{ fontSize: 'var(--text-sm)' }}>
                   {t.name}
                 </span>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(curlFor(t.token))
-                    toast('curl example copied', 'success')
-                  }}>Copy curl</Button>
                   <Button variant="ghost" size="sm" onClick={() => rotate(t.id)}>Rotate</Button>
                   <Button variant="danger" size="sm" onClick={() => remove(t.id)}>Delete</Button>
                 </div>
               </div>
-              <pre className="overflow-x-auto p-3 rounded-[var(--radius-sm)] font-mono"
-                style={{ background: 'var(--bg)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                {curlFor(t.token)}
-              </pre>
+              <div className="relative group">
+                <pre className="overflow-x-auto p-3 pr-10 rounded-[var(--radius-md)] font-mono border border-[var(--border)]"
+                  style={{ background: 'var(--bg)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                  {curlFor(t.token)}
+                </pre>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(curlFor(t.token))
+                    toast('curl example copied', 'success')
+                  }}
+                  className="absolute top-2 right-2 p-1.5 rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors"
+                  title="Copy curl"
+                  aria-label="Copy curl example"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
               {t.last_used_at && (
                 <div className="mt-2 text-[var(--text-faint)]" style={{ fontSize: 'var(--text-xs)' }}>
                   Last used {new Date(t.last_used_at * 1000).toLocaleString()}
@@ -605,7 +645,7 @@ export default function Settings() {
 
   return (
     <AppShell>
-      <div className="p-4 lg:p-6 max-w-4xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-4xl mx-auto page-enter">
         {/* Tab nav */}
         <div className="flex gap-1 mb-8 border-b border-[var(--border)]">
           {tabs.map((t) => (
@@ -615,12 +655,18 @@ export default function Settings() {
               className={clsx(
                 'px-4 py-2.5 font-medium transition-colors relative',
                 tab === t.key
-                  ? 'text-[var(--accent)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[var(--accent)]'
+                  ? 'text-[var(--text)]'
                   : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               )}
               style={{ fontSize: 'var(--text-sm)' }}
             >
               {t.label}
+              {tab === t.key && (
+                <span
+                  className="absolute bottom-0 left-0 right-0"
+                  style={{ height: '2px', background: 'var(--accent-gradient)' }}
+                />
+              )}
             </button>
           ))}
         </div>

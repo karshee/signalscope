@@ -1,54 +1,75 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
-  ChevronRight, Check, Zap, ArrowRight, ChevronDown,
+  ChevronRight, Check, Zap, ArrowRight,
   MessageSquare, Workflow, TrendingUp, Clapperboard, Webhook, ShieldCheck,
   Link2, Play,
 } from 'lucide-react'
 
-// ── Light theme design tokens ─────────────────────────────────────────────────
+// ── Electric-ink design tokens (mirrors ui/src/styles/globals.css) ───────────
 
-const L = {
-  bg:          '#ffffff',
-  surface:     '#f8fafc',
-  surface2:    '#f1f5f9',
-  border:      'rgba(0,0,0,0.08)',
-  text:        '#0f172a',
-  textMuted:   '#64748b',
-  textFaint:   '#94a3b8',
-  accent:      '#00c49a',
-  accentDim:   'rgba(0,196,154,0.10)',
-  accentBorder:'rgba(0,196,154,0.35)',
-  win:         '#16a34a',
-  loss:        '#dc2626',
-  mono:        "'JetBrains Mono', monospace",
-  // Terminal dark panel
-  term:        '#0d1117',
-  termBorder:  'rgba(255,255,255,0.08)',
+const T = {
+  bg:           'var(--bg)',
+  raised:       'var(--bg-raised)',
+  surface:      'var(--surface)',
+  surface2:     'var(--surface-2)',
+  surface3:     'var(--surface-3)',
+  glass:        'var(--glass)',
+  border:       'var(--border)',
+  borderStrong: 'var(--border-strong)',
+  text:         'var(--text)',
+  muted:        'var(--text-muted)',
+  faint:        'var(--text-faint)',
+  inverse:      'var(--text-inverse)',
+  accent:       'var(--accent)',
+  accent2:      'var(--accent-2)',
+  accentDim:    'var(--accent-dim)',
+  gradient:     'var(--accent-gradient)',
+  gradientSoft: 'var(--accent-gradient-soft)',
+  win:          'var(--win)',
+  trigger:      'var(--node-trigger)',
+  condition:    'var(--node-condition)',
+  action:       'var(--node-action)',
+  mono:         'var(--font-mono)',
+  ease:         'var(--ease)',
 }
 
-// ── Keyframe styles injected once ─────────────────────────────────────────────
+const glass: React.CSSProperties = {
+  background: 'var(--glass)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  border: '1px solid var(--border)',
+}
+
+// ── Keyframes + responsive rules injected once ────────────────────────────────
 
 const GLOBAL_STYLES = `
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
+  @keyframes twSlideUp {
+    from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes pulseDot {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.4; }
-  }
-  @keyframes termLine {
+  @keyframes twTermLine {
     from { opacity: 0; transform: translateX(-6px); }
     to   { opacity: 1; transform: translateX(0); }
   }
-  @keyframes flowDash {
+  @keyframes twFlowDash {
     to { stroke-dashoffset: -16; }
+  }
+  .tw-hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 64px;
+    align-items: center;
+  }
+  .tw-nav-links { display: flex; }
+  @media (max-width: 920px) {
+    .tw-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .tw-nav-links { display: none !important; }
   }
   .tw-hiw-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    gap: 24px;
     position: relative;
   }
   .tw-hiw-hline { display: block; }
@@ -60,17 +81,74 @@ const GLOBAL_STYLES = `
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px 0;
-      margin-left: 20px;
+      padding: 14px 0;
     }
   }
 `
 
-// ── Nav (light) ───────────────────────────────────────────────────────────────
+// ── Shared bits ───────────────────────────────────────────────────────────────
+
+function Wordmark({ size = 16 }: { size?: number }) {
+  const s = Math.round(size * 1.55)
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+      <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+        <defs>
+          <linearGradient id="twMarkGrad" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%" stopColor="#00e5b3" />
+            <stop offset="100%" stopColor="#00b3ff" />
+          </linearGradient>
+        </defs>
+        <circle cx="16" cy="16" r="13" stroke="url(#twMarkGrad)" strokeWidth="1.5" />
+        <circle cx="16" cy="16" r="7" stroke="url(#twMarkGrad)" strokeWidth="1" opacity="0.5" />
+        <line x1="2" y1="16" x2="8" y2="16" stroke="url(#twMarkGrad)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="24" y1="16" x2="30" y2="16" stroke="url(#twMarkGrad)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="16" y1="2" x2="16" y2="8" stroke="url(#twMarkGrad)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="16" y1="24" x2="16" y2="30" stroke="url(#twMarkGrad)" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="16" cy="16" r="2.5" fill="url(#twMarkGrad)" />
+      </svg>
+      <span className="gradient-text" style={{ fontWeight: 800, fontSize: size, letterSpacing: '-0.02em' }}>
+        Tapwire
+      </span>
+    </span>
+  )
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: '0.14em',
+        marginBottom: 12,
+        fontFamily: T.mono,
+      }}
+      className="gradient-text"
+    >
+      {children}
+    </p>
+  )
+}
+
+function SectionGlow({ color, x, y }: { color: string; x: string; y: string }) {
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        background: `radial-gradient(640px 420px at ${x} ${y}, ${color}, transparent 65%)`,
+      }}
+    />
+  )
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
 
 function Nav() {
   const [scrolled, setScrolled] = useState(false)
-  const navigate = useNavigate()
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
@@ -90,29 +168,19 @@ function Nav() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 24px',
-          height: '60px',
-          background: scrolled ? 'rgba(255,255,255,0.92)' : '#ffffff',
-          borderBottom: `1px solid ${scrolled ? L.border : 'transparent'}`,
-          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          height: 64,
+          background: scrolled ? 'rgba(7,9,15,0.72)' : 'transparent',
+          borderBottom: `1px solid ${scrolled ? 'var(--border)' : 'transparent'}`,
+          backdropFilter: scrolled ? 'blur(16px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none',
           transition: 'all 0.25s ease',
         }}
       >
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="13" stroke={L.accent} strokeWidth="1.5" />
-            <circle cx="16" cy="16" r="7" stroke={L.accent} strokeWidth="1" opacity="0.5" />
-            <line x1="2" y1="16" x2="8" y2="16" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="24" y1="16" x2="30" y2="16" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="16" y1="2" x2="16" y2="8" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="16" y1="24" x2="16" y2="30" stroke={L.accent} strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="16" cy="16" r="2.5" fill={L.accent} />
-          </svg>
-          <span style={{ fontWeight: 600, fontSize: '16px', color: L.text }}>Tapwire</span>
-        </div>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <Wordmark size={16} />
+        </Link>
 
-        {/* Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+        <div className="tw-nav-links" style={{ alignItems: 'center', gap: 28 }}>
           {[
             { label: 'How it works', href: '#how-it-works' },
             { label: 'Features',     href: '#features' },
@@ -123,43 +191,44 @@ function Nav() {
             <a
               key={item.label}
               href={item.href}
-              style={{ fontSize: '14px', color: L.textMuted, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = L.text)}
-              onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
+              style={{ fontSize: 14, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = T.text)}
+              onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
             >
               {item.label}
             </a>
           ))}
-          <button
-            onClick={() => navigate('/login')}
-            style={{ fontSize: '14px', color: L.textMuted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color = L.text)}
-            onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
-          >
-            Login
-          </button>
         </div>
 
-        {/* CTA */}
-        <button
-          onClick={() => navigate('/register')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 18px',
-            borderRadius: '8px',
-            background: L.accent,
-            color: '#ffffff',
-            fontWeight: 600,
-            fontSize: '14px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          Get started <ChevronRight style={{ width: 15, height: 15 }} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <Link
+            to="/login"
+            style={{ fontSize: 14, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = T.text)}
+            onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
+          >
+            Login
+          </Link>
+          <Link
+            to="/register"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '9px 20px',
+              borderRadius: 999,
+              background: T.gradient,
+              color: T.inverse,
+              fontWeight: 700,
+              fontSize: 14,
+              textDecoration: 'none',
+              boxShadow: 'var(--shadow-accent)',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 36px rgba(0,229,179,0.4)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-accent)' }}
+          >
+            Get started <ChevronRight style={{ width: 15, height: 15 }} />
+          </Link>
+        </div>
       </nav>
     </>
   )
@@ -168,11 +237,10 @@ function Nav() {
 // ── Rule canvas mock (hero visual) ────────────────────────────────────────────
 
 function NodeCard({
-  symbol, symbolBg, symbolColor, kind, title, children, delay,
+  icon, color, kind, title, children, delay,
 }: {
-  symbol: string
-  symbolBg: string
-  symbolColor: string
+  icon: React.ReactNode
+  color: string
   kind: string
   title: string
   children?: React.ReactNode
@@ -181,35 +249,36 @@ function NodeCard({
   return (
     <div
       style={{
-        background: L.bg,
-        border: `1px solid ${L.border}`,
-        borderRadius: '10px',
+        background: T.surface2,
+        border: '1px solid var(--border-strong)',
+        borderRadius: 12,
         padding: '12px 14px',
-        boxShadow: '0 4px 16px rgba(15,23,42,0.07)',
         width: '100%',
-        animation: 'slideUp 400ms ease both',
+        animation: 'twSlideUp 450ms var(--ease) both',
         animationDelay: `${delay}ms`,
         position: 'relative',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
       }}
     >
       {/* connection ports */}
-      <div style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: L.bg, border: `2px solid ${L.accent}` }} />
-      <div style={{ position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: L.bg, border: `2px solid ${L.accent}` }} />
+      <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: T.surface2, border: `2px solid ${color}` }} />
+      <div style={{ position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)', width: 8, height: 8, borderRadius: '50%', background: T.surface2, border: `2px solid ${color}` }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: children ? '8px' : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: children ? 8 : 0 }}>
         <div
           style={{
-            width: 28, height: 28, borderRadius: '7px', flexShrink: 0,
-            background: symbolBg, color: symbolColor,
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: `color-mix(in srgb, ${color} 14%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${color} 35%, transparent)`,
+            color,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '13px',
           }}
         >
-          {symbol}
+          {icon}
         </div>
         <div>
-          <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: L.textFaint }}>{kind}</div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: L.text }}>{title}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color, fontFamily: T.mono }}>{kind}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{title}</div>
         </div>
       </div>
       {children}
@@ -219,15 +288,21 @@ function NodeCard({
 
 function NodeConnector({ delay }: { delay: number }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', animation: 'slideUp 400ms ease both', animationDelay: `${delay}ms` }}>
+    <div style={{ display: 'flex', justifyContent: 'center', animation: 'twSlideUp 450ms var(--ease) both', animationDelay: `${delay}ms` }}>
       <svg width="12" height="26" viewBox="0 0 12 26" fill="none">
+        <defs>
+          <linearGradient id="twConnGrad" x1="6" y1="0" x2="6" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#00e5b3" />
+            <stop offset="100%" stopColor="#00b3ff" />
+          </linearGradient>
+        </defs>
         <line
           x1="6" y1="0" x2="6" y2="18"
-          stroke={L.accent} strokeWidth="2"
+          stroke="url(#twConnGrad)" strokeWidth="2"
           strokeDasharray="4 4"
-          style={{ animation: 'flowDash 1.2s linear infinite' }}
+          style={{ animation: 'twFlowDash 1.2s linear infinite' }}
         />
-        <path d="M1.5 18.5 L6 24 L10.5 18.5" stroke={L.accent} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M1.5 18.5 L6 24 L10.5 18.5" stroke="#00b3ff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </div>
   )
@@ -235,125 +310,131 @@ function NodeConnector({ delay }: { delay: number }) {
 
 function RuleCanvas() {
   return (
-    <div
-      style={{
-        background: L.bg,
-        borderRadius: '14px',
-        border: `1px solid ${L.border}`,
-        overflow: 'hidden',
-        boxShadow: '0 24px 64px rgba(15,23,42,0.16)',
-      }}
-    >
-      {/* Window title bar */}
+    <div style={{ position: 'relative' }}>
+      {/* glow behind the window */}
       <div
+        aria-hidden
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 16px',
-          background: L.surface,
-          borderBottom: `1px solid ${L.border}`,
+          position: 'absolute',
+          inset: '-12% -8%',
+          background: 'radial-gradient(60% 60% at 50% 45%, rgba(0,229,179,0.16), transparent 70%), radial-gradient(50% 50% at 70% 60%, rgba(0,179,255,0.12), transparent 70%)',
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        className="float-y"
+        style={{
+          ...glass,
+          position: 'relative',
+          background: 'rgba(13,16,25,0.78)',
+          borderRadius: 16,
+          border: '1px solid var(--border-strong)',
+          overflow: 'hidden',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 48px rgba(0,229,179,0.10)',
         }}
       >
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
+        {/* Window title bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 16px',
+            background: 'rgba(18,22,36,0.85)',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.trigger, opacity: 0.85 }} />
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.accent2, opacity: 0.85 }} />
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.action, opacity: 0.85 }} />
+          </div>
+          <span style={{ fontSize: 11, color: T.muted, fontFamily: T.mono }}>tapwire — rule builder</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div className="pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: T.accent }} />
+            <span style={{ fontSize: 10, color: T.accent, fontWeight: 700, fontFamily: T.mono }}>ACTIVE</span>
+          </div>
         </div>
-        <span style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>tapwire — rule builder</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div
-            style={{
-              width: 7, height: 7, borderRadius: '50%',
-              background: L.accent,
-              animation: 'pulseDot 1.5s ease-in-out infinite',
-            }}
-          />
-          <span style={{ fontSize: '10px', color: L.accent, fontWeight: 700 }}>ACTIVE</span>
+
+        {/* Canvas with dot grid */}
+        <div
+          style={{
+            padding: '24px 28px',
+            backgroundImage: 'radial-gradient(rgba(148,163,217,0.12) 1px, transparent 1px)',
+            backgroundSize: '18px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+          }}
+        >
+          <NodeCard
+            icon={<Zap style={{ width: 14, height: 14 }} />}
+            color="var(--node-trigger)"
+            kind="TRIGGER"
+            title="TP hit on XAUUSD"
+            delay={200}
+          >
+            <div style={{ fontSize: 11, color: T.muted, fontFamily: T.mono }}>
+              watching <span style={{ color: T.accent }}>@GoldSignalsVIP</span> · live prices
+            </div>
+          </NodeCard>
+
+          <NodeConnector delay={350} />
+
+          <NodeCard
+            icon={<Workflow style={{ width: 14, height: 14 }} />}
+            color="var(--node-condition)"
+            kind="CONDITION"
+            title="tp_level ≥ 2"
+            delay={450}
+          >
+            <div style={{ fontSize: 11, color: T.muted, fontFamily: T.mono }}>
+              only announce the big targets
+            </div>
+          </NodeCard>
+
+          <NodeConnector delay={600} />
+
+          <NodeCard
+            icon={<Play style={{ width: 14, height: 14 }} />}
+            color="var(--node-action)"
+            kind="ACTION"
+            title="Post to @VIPSignals"
+            delay={700}
+          >
+            <div
+              style={{
+                background: T.surface3,
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '8px 10px',
+                fontSize: 12,
+                color: T.text,
+                marginBottom: 8,
+              }}
+            >
+              🎯 XAUUSD TP2 HIT! +150 pips 🚀
+            </div>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '3px 10px',
+                borderRadius: 999,
+                background: T.accentDim,
+                border: '1px solid rgba(0,229,179,0.35)',
+                fontSize: 11,
+                color: T.accent,
+                fontWeight: 600,
+                fontFamily: T.mono,
+              }}
+            >
+              🎬 celebration.gif
+            </div>
+          </NodeCard>
         </div>
-      </div>
-
-      {/* Canvas with dot grid */}
-      <div
-        style={{
-          padding: '24px 28px',
-          background: L.surface,
-          backgroundImage: 'radial-gradient(rgba(15,23,42,0.08) 1px, transparent 1px)',
-          backgroundSize: '18px 18px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-        }}
-      >
-        <NodeCard
-          symbol="⚡"
-          symbolBg={L.accentDim}
-          symbolColor={L.accent}
-          kind="TRIGGER"
-          title="TP hit on XAUUSD"
-          delay={200}
-        >
-          <div style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>
-            watching <span style={{ color: L.accent }}>@GoldSignalsVIP</span> · live prices
-          </div>
-        </NodeCard>
-
-        <NodeConnector delay={350} />
-
-        <NodeCard
-          symbol="◆"
-          symbolBg="rgba(245,158,11,0.12)"
-          symbolColor="#d97706"
-          kind="CONDITION"
-          title="tp_level ≥ 2"
-          delay={450}
-        >
-          <div style={{ fontSize: '11px', color: L.textMuted, fontFamily: L.mono }}>
-            only announce the big targets
-          </div>
-        </NodeCard>
-
-        <NodeConnector delay={600} />
-
-        <NodeCard
-          symbol="▶"
-          symbolBg="rgba(59,130,246,0.12)"
-          symbolColor="#2563eb"
-          kind="ACTION"
-          title="Post to @VIPSignals"
-          delay={700}
-        >
-          <div
-            style={{
-              background: L.surface2,
-              border: `1px solid ${L.border}`,
-              borderRadius: '8px',
-              padding: '8px 10px',
-              fontSize: '12px',
-              color: L.text,
-              marginBottom: '8px',
-            }}
-          >
-            🎯 XAUUSD TP2 HIT! +150 pips 🚀
-          </div>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '3px 10px',
-              borderRadius: '999px',
-              background: L.accentDim,
-              border: `1px solid ${L.accentBorder}`,
-              fontSize: '11px',
-              color: L.accent,
-              fontWeight: 600,
-              fontFamily: L.mono,
-            }}
-          >
-            🎬 celebration.gif
-          </div>
-        </NodeCard>
       </div>
     </div>
   )
@@ -362,160 +443,169 @@ function RuleCanvas() {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 function Hero() {
-  const navigate = useNavigate()
-
   return (
     <section
       style={{
-        background: L.bg,
-        backgroundImage: 'radial-gradient(ellipse 70% 50% at 60% 0%, rgba(0,196,154,0.06) 0%, transparent 60%)',
-        paddingTop: '100px',
-        paddingBottom: '80px',
+        position: 'relative',
+        paddingTop: 140,
+        paddingBottom: 72,
+        overflow: 'hidden',
       }}
     >
+      {/* big soft gradient glow behind the hero */}
       <div
+        aria-hidden
         style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 24px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '48px',
-          alignItems: 'center',
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(900px 520px at 24% -10%, rgba(0,229,179,0.13), transparent 60%), ' +
+            'radial-gradient(800px 480px at 88% 8%, rgba(0,179,255,0.11), transparent 60%), ' +
+            'radial-gradient(700px 500px at 55% 115%, rgba(129,140,248,0.08), transparent 60%)',
         }}
-      >
-        {/* Left */}
-        <div style={{ animation: 'slideUp 500ms ease both' }}>
-          {/* Eyebrow */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: '999px',
-              background: L.accentDim,
-              border: `1px solid ${L.accentBorder}`,
-              fontSize: '12px',
-              fontWeight: 600,
-              color: L.accent,
-              marginBottom: '24px',
-              letterSpacing: '0.03em',
-            }}
-          >
-            <span
+      />
+
+      <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+        <div className="tw-hero-grid">
+          {/* Left */}
+          <div style={{ animation: 'twSlideUp 550ms var(--ease) both' }}>
+            {/* Eyebrow pill */}
+            <div
               style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: L.accent,
-                animation: 'pulseDot 1.5s ease-in-out infinite',
+                ...glass,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '5px 14px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                color: T.accent,
+                marginBottom: 28,
+                letterSpacing: '0.04em',
               }}
-            />
-            Telegram Channel Automation
+            >
+              <span className="pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent }} />
+              Telegram Channel Automation
+            </div>
+
+            <h1
+              style={{
+                fontSize: 'clamp(40px, 5.4vw, 72px)',
+                fontWeight: 800,
+                color: T.text,
+                lineHeight: 1.04,
+                letterSpacing: '-0.035em',
+                marginBottom: 22,
+              }}
+            >
+              Put your Telegram channels{' '}
+              <span className="gradient-text">on autopilot.</span>
+            </h1>
+
+            <p
+              style={{
+                fontSize: 18,
+                fontWeight: 300,
+                color: T.muted,
+                lineHeight: 1.65,
+                maxWidth: 480,
+                marginBottom: 32,
+              }}
+            >
+              One workspace for all your channels, plus a visual if-this-then-that builder.
+              Traders, marketers, and community managers use Tapwire to post the right
+              message — text or GIFs — at exactly the right moment. No code.
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <Link
+                to="/register"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '13px 26px',
+                  borderRadius: 10,
+                  background: T.gradient,
+                  color: T.inverse,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textDecoration: 'none',
+                  boxShadow: 'var(--shadow-accent)',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,229,179,0.42)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-accent)' }}
+              >
+                Get started free <ChevronRight style={{ width: 16, height: 16 }} />
+              </Link>
+              <a
+                href="#how-it-works"
+                style={{
+                  ...glass,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '13px 26px',
+                  borderRadius: 10,
+                  color: T.muted,
+                  fontWeight: 500,
+                  fontSize: 15,
+                  textDecoration: 'none',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = T.text }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = T.muted }}
+              >
+                See how it works
+              </a>
+            </div>
+
+            <p style={{ fontSize: 12, color: T.faint, marginBottom: 28, fontFamily: T.mono }}>
+              Free plan · No credit card · First rule live in minutes
+            </p>
+
+            {/* Trust marks */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 20,
+                paddingTop: 20,
+                borderTop: '1px solid var(--divider)',
+              }}
+            >
+              {[
+                { icon: '🤖', text: 'Your own bot, your control' },
+                { icon: '🧩', text: 'Visual rule builder' },
+                { icon: '📈', text: 'TP/SL detection' },
+                { icon: '🔗', text: 'Webhook triggers' },
+              ].map((t) => (
+                <div key={t.text} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 14 }}>{t.icon}</span>
+                  <span style={{ fontSize: 12, color: T.faint }}>{t.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h1
-            style={{
-              fontSize: 'clamp(38px, 4vw, 56px)',
-              fontWeight: 800,
-              color: L.text,
-              lineHeight: 1.08,
-              letterSpacing: '-0.03em',
-              marginBottom: '20px',
-            }}
-          >
-            Put your Telegram channels{' '}
-            <span style={{ color: L.accent }}>on autopilot.</span>
-          </h1>
-
-          <p
-            style={{
-              fontSize: '18px',
-              color: L.textMuted,
-              lineHeight: 1.65,
-              maxWidth: '480px',
-              marginBottom: '32px',
-            }}
-          >
-            One workspace for all your channels, plus a visual if-this-then-that builder.
-            Traders, marketers, and community managers use Tapwire to post the right
-            message — text or GIFs — at exactly the right moment. No code.
-          </p>
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                background: L.accent,
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '15px',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: `0 4px 20px rgba(0,196,154,0.35)`,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
-            >
-              Get started free <ChevronRight style={{ width: 16, height: 16 }} />
-            </button>
-            <a
-              href="#how-it-works"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                background: 'transparent',
-                color: L.textMuted,
-                fontWeight: 500,
-                fontSize: '15px',
-                border: `1px solid ${L.border}`,
-                cursor: 'pointer',
-                textDecoration: 'none',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.18)'; e.currentTarget.style.color = L.text }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = L.border; e.currentTarget.style.color = L.textMuted }}
-            >
-              See how it works
-            </a>
-          </div>
-
-          <p style={{ fontSize: '12px', color: L.textFaint, marginBottom: '24px', fontFamily: L.mono }}>
-            Free plan · No credit card · First rule live in minutes
-          </p>
-
-          {/* Trust marks */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '20px',
-              paddingTop: '20px',
-              borderTop: `1px solid ${L.border}`,
-            }}
-          >
-            {[
-              { icon: '🤖', text: 'Your own bot, your control' },
-              { icon: '🧩', text: 'Visual rule builder' },
-              { icon: '📈', text: 'TP/SL detection' },
-              { icon: '🔗', text: 'Webhook triggers' },
-            ].map((t) => (
-              <div key={t.text} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '14px' }}>{t.icon}</span>
-                <span style={{ fontSize: '12px', color: L.textFaint }}>{t.text}</span>
-              </div>
-            ))}
+          {/* Right — rule canvas mock */}
+          <div style={{ animation: 'twSlideUp 550ms var(--ease) 150ms both' }}>
+            <RuleCanvas />
           </div>
         </div>
 
-        {/* Right — rule canvas mock */}
-        <div style={{ animation: 'slideUp 500ms ease 150ms both' }}>
-          <RuleCanvas />
-        </div>
+        {/* Audience strip */}
+        <p
+          style={{
+            textAlign: 'center',
+            fontSize: 13,
+            color: T.faint,
+            letterSpacing: '0.06em',
+            marginTop: 72,
+            fontFamily: T.mono,
+          }}
+        >
+          Built for traders, marketers &amp; community managers
+        </p>
       </div>
     </section>
   )
@@ -549,93 +639,78 @@ function HowItWorks() {
   ]
 
   return (
-    <section id="how-it-works" style={{ background: L.bg, padding: '96px 0' }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '56px' }}>
-          <p
-            style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              color: L.accent,
-              letterSpacing: '0.08em',
-              marginBottom: '10px',
-            }}
-          >
-            HOW IT WORKS
-          </p>
+    <section id="how-it-works" style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(0,229,179,0.07)" x="12%" y="0%" />
+      <div style={{ position: 'relative', maxWidth: 1040, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ marginBottom: 56 }}>
+          <Eyebrow>HOW IT WORKS</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontSize: 'clamp(28px, 3.6vw, 44px)',
               fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
-              lineHeight: 1.15,
+              color: T.text,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.12,
             }}
           >
             From sign-up to your first automation in minutes.
           </h2>
         </div>
 
-        {/* Steps */}
         <div className="tw-hiw-grid">
-          {/* Connector line (desktop) */}
+          {/* Gradient connector line (desktop) */}
           <div
             className="tw-hiw-hline"
             style={{
               position: 'absolute',
-              top: '20px',
-              left: '60px',
-              right: '60px',
-              height: '2px',
-              background: `linear-gradient(to right, transparent, ${L.accentBorder} 10%, ${L.accentBorder} 90%, transparent)`,
+              top: 44,
+              left: 80,
+              right: 80,
+              height: 2,
+              background: 'linear-gradient(to right, transparent, rgba(0,229,179,0.5) 12%, rgba(0,179,255,0.5) 88%, transparent)',
             }}
           />
 
           {steps.map((step, i) => (
             <div key={i}>
-              <div style={{ position: 'relative' }}>
-                {/* Number badge */}
-                <div
-                  style={{
-                    width: 40, height: 40,
-                    borderRadius: '50%',
-                    background: L.bg,
-                    border: `2px solid ${L.accent}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: L.mono,
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    color: L.accent,
-                    marginBottom: '20px',
-                    position: 'relative',
-                    zIndex: 1,
-                  }}
-                >
-                  {step.n}
+              <div
+                className="card-lift"
+                style={{
+                  ...glass,
+                  position: 'relative',
+                  borderRadius: 16,
+                  padding: '28px 24px',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <span
+                    className="gradient-text"
+                    style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, fontFamily: T.mono }}
+                  >
+                    {step.n}
+                  </span>
+                  <div
+                    style={{
+                      width: 38, height: 38,
+                      borderRadius: 10,
+                      background: T.accentDim,
+                      border: '1px solid rgba(0,229,179,0.30)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: T.accent,
+                    }}
+                  >
+                    {step.icon}
+                  </div>
                 </div>
 
-                <div
-                  style={{
-                    width: 36, height: 36,
-                    borderRadius: '9px',
-                    background: L.accentDim,
-                    border: `1px solid ${L.accentBorder}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: L.accent,
-                    marginBottom: '14px',
-                  }}
-                >
-                  {step.icon}
-                </div>
-
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>
                   {step.title}
                 </h3>
-                <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.65, marginBottom: '10px', maxWidth: '280px' }}>
+                <p style={{ fontSize: 14, fontWeight: 300, color: T.muted, lineHeight: 1.65, marginBottom: 12 }}>
                   {step.desc}
                 </p>
-                <span style={{ fontSize: '11px', color: L.accent, fontFamily: L.mono, fontWeight: 600 }}>
+                <span style={{ fontSize: 11, color: T.accent, fontFamily: T.mono, fontWeight: 600 }}>
                   → {step.detail}
                 </span>
               </div>
@@ -644,8 +719,8 @@ function HowItWorks() {
               {i < steps.length - 1 && (
                 <div className="tw-hiw-vconnector">
                   <svg width="12" height="34" viewBox="0 0 12 34" fill="none">
-                    <line x1="6" y1="0" x2="6" y2="26" stroke={L.accentBorder} strokeWidth="2" strokeDasharray="4 4" />
-                    <path d="M1.5 26.5 L6 32 L10.5 26.5" stroke={L.accent} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="6" y1="0" x2="6" y2="26" stroke="rgba(0,229,179,0.4)" strokeWidth="2" strokeDasharray="4 4" />
+                    <path d="M1.5 26.5 L6 32 L10.5 26.5" stroke={'#00b3ff'} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               )}
@@ -664,31 +739,37 @@ const FEATURES = [
     title: 'Chat workspace',
     desc: 'All your channels in one clean inbox. Click a saved template to post text or GIFs — instantly, without switching apps.',
     lucide: <MessageSquare style={{ width: 18, height: 18 }} />,
+    tint: 'var(--accent)',
   },
   {
     title: 'Visual rule builder',
     desc: 'Drag Trigger → Condition → Action blocks onto a canvas. If this happens, post that. No code, no YAML, no scripts.',
     lucide: <Workflow style={{ width: 18, height: 18 }} />,
+    tint: 'var(--accent-2)',
   },
   {
     title: 'Trading triggers',
     desc: 'Tapwire parses signals in your channels and tracks TP/SL against live prices. The moment a target hits, your rule fires.',
     lucide: <TrendingUp style={{ width: 18, height: 18 }} />,
+    tint: 'var(--win)',
   },
   {
     title: 'Saved templates & GIFs',
     desc: 'Reusable templates with variables like {pair}, {tp_level}, and {pips}. Attach media once, post it everywhere.',
     lucide: <Clapperboard style={{ width: 18, height: 18 }} />,
+    tint: 'var(--node-condition)',
   },
   {
     title: 'Webhooks & integrations',
     desc: 'Any external system can fire your automations with one HTTP call. Trading bots, CRMs, cron jobs — if it can curl, it can post.',
     lucide: <Webhook style={{ width: 18, height: 18 }} />,
+    tint: 'var(--node-action)',
   },
   {
     title: 'Loop-safe engine',
     desc: 'Rate limits, self-send protection, and a full execution log. Your rules can’t spam your channels or trigger each other forever.',
     lucide: <ShieldCheck style={{ width: 18, height: 18 }} />,
+    tint: 'var(--accent)',
   },
 ]
 
@@ -696,34 +777,30 @@ function Features() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   return (
-    <section
-      id="features"
-      style={{ background: L.surface, padding: '96px 0' }}
-    >
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
-            FEATURES
-          </p>
+    <section id="features" style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(0,179,255,0.07)" x="85%" y="10%" />
+      <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <Eyebrow>FEATURES</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontSize: 'clamp(28px, 3.6vw, 44px)',
               fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
-              marginBottom: '12px',
+              color: T.text,
+              letterSpacing: '-0.03em',
+              marginBottom: 12,
             }}
           >
             Everything channel work needs. Nothing it doesn&apos;t.
           </h2>
-          <p style={{ fontSize: '16px', color: L.textMuted }}>Post by hand from one inbox, or let rules do it for you.</p>
+          <p style={{ fontSize: 16, fontWeight: 300, color: T.muted }}>Post by hand from one inbox, or let rules do it for you.</p>
         </div>
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '16px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 16,
           }}
         >
           {FEATURES.map((f, i) => (
@@ -732,31 +809,31 @@ function Features() {
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
               style={{
-                background: L.bg,
-                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
-                borderRadius: '12px',
-                padding: '24px',
+                ...glass,
+                borderColor: hoveredIdx === i ? `color-mix(in srgb, ${f.tint} 40%, transparent)` : 'var(--border)',
+                borderRadius: 16,
+                padding: 26,
                 cursor: 'default',
-                transition: 'all 0.2s ease',
-                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
-                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
+                transition: 'all 0.25s var(--ease)',
+                boxShadow: hoveredIdx === i ? `0 12px 40px rgba(0,0,0,0.5), 0 0 28px color-mix(in srgb, ${f.tint} 14%, transparent)` : 'none',
+                transform: hoveredIdx === i ? 'translateY(-3px)' : 'translateY(0)',
               }}
             >
               <div
                 style={{
                   width: 40, height: 40,
-                  borderRadius: '10px',
-                  background: L.accentDim,
-                  border: `1px solid ${L.accentBorder}`,
+                  borderRadius: 10,
+                  background: `color-mix(in srgb, ${f.tint} 12%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${f.tint} 30%, transparent)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: L.accent,
-                  marginBottom: '16px',
+                  color: f.tint,
+                  marginBottom: 16,
                 }}
               >
                 {f.lucide}
               </div>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: L.text, marginBottom: '8px' }}>{f.title}</h3>
-              <p style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.65 }}>{f.desc}</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 8 }}>{f.title}</h3>
+              <p style={{ fontSize: 13, fontWeight: 300, color: T.muted, lineHeight: 1.65 }}>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -765,35 +842,33 @@ function Features() {
   )
 }
 
-// ── Live example strip (dark panel) ───────────────────────────────────────────
+// ── Live example strip (terminal panel) ───────────────────────────────────────
 
 function LiveExample() {
   const lines = [
-    { delay: 0,    content: <><span style={{ color: '#8b949e' }}>[09:30:14] </span><span style={{ color: '#79c0ff' }}>@GoldSignalsVIP</span><span style={{ color: '#8b949e' }}> → incoming message</span></> },
-    { delay: 150,  content: <><span style={{ color: '#8b949e' }}>  &quot;</span><span style={{ color: '#e6edf3' }}>XAUUSD BUY 2341.50 | TP1 2348.00 TP2 2355.00 | SL 2330.00</span><span style={{ color: '#8b949e' }}>&quot;</span></> },
-    { delay: 350,  content: <><span style={{ color: '#8b949e' }}>[09:30:14] </span><span style={{ color: '#f0883e' }}>[PARSE]</span><span style={{ color: '#3fb950' }}> signal detected</span><span style={{ color: '#8b949e' }}> — pair: </span><span style={{ color: '#79c0ff' }}>XAUUSD</span><span style={{ color: '#8b949e' }}>, tracking TP/SL vs live price</span></> },
-    { delay: 550,  content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 750,  content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[PRICE]</span><span style={{ color: '#e6edf3' }}> XAUUSD 2355.10 ≥ TP2 2355.00</span></> },
-    { delay: 950,  content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[TRIGGER]</span><span style={{ color: '#3fb950' }}> tp_hit</span><span style={{ color: '#8b949e' }}> — tp_level: </span><span style={{ color: '#79c0ff' }}>2</span><span style={{ color: '#8b949e' }}>, pips: </span><span style={{ color: '#3fb950' }}>+150</span></> },
-    { delay: 1150, content: <><span style={{ color: '#8b949e' }}>[11:02:41] </span><span style={{ color: '#f0883e' }}>[CONDITION]</span><span style={{ color: '#e6edf3' }}> tp_level ≥ 2 </span><span style={{ color: '#3fb950' }}>✓ pass</span></> },
-    { delay: 1350, content: <span style={{ color: '#8b949e' }}>&nbsp;</span> },
-    { delay: 1550, content: <><span style={{ color: '#8b949e' }}>[11:02:42] </span><span style={{ color: '#f0883e' }}>[ACTION]</span><span style={{ color: '#3fb950' }}> posted</span><span style={{ color: '#8b949e' }}> → </span><span style={{ color: '#79c0ff' }}>@VIPSignals</span></> },
-    { delay: 1700, content: <><span style={{ color: '#8b949e' }}>  &quot;</span><span style={{ color: '#e6edf3' }}>🎯 XAUUSD TP2 HIT! +150 pips 🚀</span><span style={{ color: '#8b949e' }}>&quot; + </span><span style={{ color: L.accent }}>[celebration.gif]</span></> },
+    { delay: 0,    content: <><span style={{ color: T.faint }}>[09:30:14] </span><span style={{ color: T.accent2 }}>@GoldSignalsVIP</span><span style={{ color: T.faint }}> → incoming message</span></> },
+    { delay: 150,  content: <><span style={{ color: T.faint }}>  &quot;</span><span style={{ color: T.text }}>XAUUSD BUY 2341.50 | TP1 2348.00 TP2 2355.00 | SL 2330.00</span><span style={{ color: T.faint }}>&quot;</span></> },
+    { delay: 350,  content: <><span style={{ color: T.faint }}>[09:30:14] </span><span style={{ color: T.condition }}>[PARSE]</span><span style={{ color: T.win }}> signal detected</span><span style={{ color: T.faint }}> — pair: </span><span style={{ color: T.accent2 }}>XAUUSD</span><span style={{ color: T.faint }}>, tracking TP/SL vs live price</span></> },
+    { delay: 550,  content: <span style={{ color: T.faint }}>&nbsp;</span> },
+    { delay: 750,  content: <><span style={{ color: T.faint }}>[11:02:41] </span><span style={{ color: T.condition }}>[PRICE]</span><span style={{ color: T.text }}> XAUUSD 2355.10 ≥ TP2 2355.00</span></> },
+    { delay: 950,  content: <><span style={{ color: T.faint }}>[11:02:41] </span><span style={{ color: T.condition }}>[TRIGGER]</span><span style={{ color: T.win }}> tp_hit</span><span style={{ color: T.faint }}> — tp_level: </span><span style={{ color: T.accent2 }}>2</span><span style={{ color: T.faint }}>, pips: </span><span style={{ color: T.win }}>+150</span></> },
+    { delay: 1150, content: <><span style={{ color: T.faint }}>[11:02:41] </span><span style={{ color: T.condition }}>[CONDITION]</span><span style={{ color: T.text }}> tp_level ≥ 2 </span><span style={{ color: T.win }}>✓ pass</span></> },
+    { delay: 1350, content: <span style={{ color: T.faint }}>&nbsp;</span> },
+    { delay: 1550, content: <><span style={{ color: T.faint }}>[11:02:42] </span><span style={{ color: T.condition }}>[ACTION]</span><span style={{ color: T.win }}> posted</span><span style={{ color: T.faint }}> → </span><span style={{ color: T.accent2 }}>@VIPSignals</span></> },
   ]
 
   return (
-    <section style={{ background: L.term, padding: '96px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '12px' }}>
-            LIVE EXAMPLE
-          </p>
+    <section style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(129,140,248,0.08)" x="50%" y="100%" />
+      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <Eyebrow>LIVE EXAMPLE</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(26px, 3vw, 36px)',
+              fontSize: 'clamp(26px, 3.2vw, 40px)',
               fontWeight: 800,
-              color: '#e6edf3',
-              letterSpacing: '-0.025em',
+              color: T.text,
+              letterSpacing: '-0.03em',
               lineHeight: 1.2,
             }}
           >
@@ -803,13 +878,14 @@ function LiveExample() {
 
         <div
           style={{
-            background: L.term,
-            borderRadius: '12px',
-            border: `1px solid ${L.termBorder}`,
+            ...glass,
+            background: 'rgba(10,13,21,0.82)',
+            borderRadius: 16,
+            border: '1px solid var(--border-strong)',
             overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-            fontFamily: L.mono,
-            fontSize: '13px',
+            boxShadow: '0 24px 72px rgba(0,0,0,0.55), 0 0 40px rgba(0,179,255,0.07)',
+            fontFamily: T.mono,
+            fontSize: 13,
             lineHeight: 1.7,
           }}
         >
@@ -820,35 +896,29 @@ function LiveExample() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '10px 16px',
-              background: 'rgba(255,255,255,0.04)',
-              borderBottom: `1px solid ${L.termBorder}`,
+              background: 'rgba(18,22,36,0.85)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.trigger, opacity: 0.85 }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.accent2, opacity: 0.85 }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.action, opacity: 0.85 }} />
             </div>
-            <span style={{ fontSize: '11px', color: '#8b949e' }}>tapwire — execution log</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <div
-                style={{
-                  width: 7, height: 7, borderRadius: '50%',
-                  background: '#3fb950',
-                  animation: 'pulseDot 1.5s ease-in-out infinite',
-                }}
-              />
-              <span style={{ fontSize: '10px', color: '#3fb950', fontWeight: 600 }}>LIVE</span>
+            <span style={{ fontSize: 11, color: T.muted }}>tapwire — execution log</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div className="pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: T.win }} />
+              <span style={{ fontSize: 10, color: T.win, fontWeight: 600 }}>LIVE</span>
             </div>
           </div>
 
           {/* Log lines */}
-          <div style={{ padding: '16px 18px', overflowX: 'auto' }}>
+          <div style={{ padding: '16px 18px 8px', overflowX: 'auto' }}>
             {lines.map((line, i) => (
               <div
                 key={i}
                 style={{
-                  animation: `termLine 300ms ease both`,
+                  animation: 'twTermLine 300ms ease both',
                   animationDelay: `${line.delay}ms`,
                   whiteSpace: 'nowrap',
                 }}
@@ -857,9 +927,66 @@ function LiveExample() {
               </div>
             ))}
           </div>
+
+          {/* Posted message — chat bubble */}
+          <div
+            style={{
+              padding: '8px 18px 18px',
+              animation: 'twTermLine 300ms ease both',
+              animationDelay: '1700ms',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                flexDirection: 'column',
+                gap: 8,
+                maxWidth: 420,
+                padding: '12px 14px',
+                borderRadius: '14px 14px 14px 4px',
+                background: T.surface3,
+                border: '1px solid var(--border-strong)',
+                fontFamily: 'var(--font-ui)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div
+                  style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: T.gradient,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, color: T.inverse,
+                  }}
+                >
+                  V
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.accent2 }}>@VIPSignals</span>
+                <span style={{ fontSize: 10, color: T.faint, fontFamily: T.mono }}>11:02</span>
+              </div>
+              <div style={{ fontSize: 14, color: T.text }}>🎯 XAUUSD TP2 HIT! +150 pips 🚀</div>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  alignSelf: 'flex-start',
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  background: T.accentDim,
+                  border: '1px solid rgba(0,229,179,0.35)',
+                  fontSize: 11,
+                  color: T.accent,
+                  fontWeight: 600,
+                  fontFamily: T.mono,
+                }}
+              >
+                🎬 celebration.gif
+              </div>
+            </div>
+          </div>
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: '14px', color: '#8b949e', marginTop: '24px' }}>
+        <p style={{ textAlign: 'center', fontSize: 14, fontWeight: 300, color: T.muted, marginTop: 24 }}>
           Set it up once. Tapwire announces every win, instantly.
         </p>
       </div>
@@ -873,6 +1000,7 @@ const USE_CASES = [
   {
     icon: <TrendingUp style={{ width: 18, height: 18 }} />,
     title: 'Signal providers & traders',
+    tint: 'var(--accent)',
     points: [
       'Auto-announce TP hits with celebration GIFs',
       'Relay signals between free and VIP channels',
@@ -882,6 +1010,7 @@ const USE_CASES = [
   {
     icon: <Play style={{ width: 18, height: 18 }} />,
     title: 'Marketers',
+    tint: 'var(--accent-2)',
     points: [
       'Scheduled campaigns across every channel at once',
       'Keyword-triggered replies in your groups',
@@ -891,6 +1020,7 @@ const USE_CASES = [
   {
     icon: <MessageSquare style={{ width: 18, height: 18 }} />,
     title: 'Community managers',
+    tint: 'var(--node-action)',
     points: [
       'Welcome and info posts on a schedule',
       'FAQ auto-answers for repeat questions',
@@ -903,31 +1033,30 @@ function UseCases() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   return (
-    <section id="use-cases" style={{ background: L.bg, padding: '96px 0' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
-            USE CASES
-          </p>
+    <section id="use-cases" style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(0,229,179,0.06)" x="15%" y="90%" />
+      <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <Eyebrow>USE CASES</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontSize: 'clamp(28px, 3.6vw, 44px)',
               fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
-              marginBottom: '12px',
+              color: T.text,
+              letterSpacing: '-0.03em',
+              marginBottom: 12,
             }}
           >
             Built for the people who run channels
           </h2>
-          <p style={{ fontSize: '16px', color: L.textMuted }}>Same builder. Three very different jobs done.</p>
+          <p style={{ fontSize: 16, fontWeight: 300, color: T.muted }}>Same builder. Three very different jobs done.</p>
         </div>
 
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '16px',
+            gap: 16,
           }}
         >
           {USE_CASES.map((uc, i) => (
@@ -936,38 +1065,48 @@ function UseCases() {
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
               style={{
-                background: L.surface,
-                border: `1px solid ${hoveredIdx === i ? L.accentBorder : L.border}`,
-                borderRadius: '12px',
-                padding: '28px',
+                ...glass,
+                borderColor: hoveredIdx === i ? `color-mix(in srgb, ${uc.tint} 40%, transparent)` : 'var(--border)',
+                borderRadius: 16,
+                padding: 0,
+                overflow: 'hidden',
                 cursor: 'default',
-                transition: 'all 0.2s ease',
-                boxShadow: hoveredIdx === i ? '0 8px 32px rgba(0,196,154,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
-                transform: hoveredIdx === i ? 'translateY(-2px)' : 'translateY(0)',
+                transition: 'all 0.25s var(--ease)',
+                boxShadow: hoveredIdx === i ? `0 12px 40px rgba(0,0,0,0.5), 0 0 28px color-mix(in srgb, ${uc.tint} 14%, transparent)` : 'none',
+                transform: hoveredIdx === i ? 'translateY(-3px)' : 'translateY(0)',
               }}
             >
+              {/* Colored top accent strip */}
               <div
                 style={{
-                  width: 40, height: 40,
-                  borderRadius: '10px',
-                  background: L.accentDim,
-                  border: `1px solid ${L.accentBorder}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: L.accent,
-                  marginBottom: '16px',
+                  height: 3,
+                  background: `linear-gradient(to right, ${uc.tint}, color-mix(in srgb, ${uc.tint} 30%, transparent))`,
                 }}
-              >
-                {uc.icon}
+              />
+              <div style={{ padding: 28 }}>
+                <div
+                  style={{
+                    width: 40, height: 40,
+                    borderRadius: 10,
+                    background: `color-mix(in srgb, ${uc.tint} 12%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${uc.tint} 30%, transparent)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: uc.tint,
+                    marginBottom: 16,
+                  }}
+                >
+                  {uc.icon}
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{uc.title}</h3>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {uc.points.map((p) => (
+                    <li key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Check style={{ width: 14, height: 14, flexShrink: 0, marginTop: 3, color: uc.tint }} />
+                      <span style={{ fontSize: 13, fontWeight: 300, color: T.muted, lineHeight: 1.6 }}>{p}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: L.text, marginBottom: '14px' }}>{uc.title}</h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {uc.points.map((p) => (
-                  <li key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <Check style={{ width: 14, height: 14, flexShrink: 0, marginTop: '3px', color: L.accent }} />
-                    <span style={{ fontSize: '13px', color: L.textMuted, lineHeight: 1.6 }}>{p}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           ))}
         </div>
@@ -979,8 +1118,6 @@ function UseCases() {
 // ── Pricing ───────────────────────────────────────────────────────────────────
 
 function Pricing() {
-  const navigate = useNavigate()
-
   const tiers = [
     {
       name: 'Free',
@@ -995,7 +1132,6 @@ function Pricing() {
         'Community support',
       ],
       cta: 'Get started',
-      action: () => navigate('/register'),
       disabled: false,
       featured: false,
     },
@@ -1012,128 +1148,163 @@ function Pricing() {
         'API access',
       ],
       cta: 'Coming soon',
-      action: () => {},
       disabled: true,
       featured: true,
     },
   ]
 
   return (
-    <section id="pricing" style={{ background: L.surface, padding: '96px 0' }}>
-      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
-            PRICING
-          </p>
+    <section id="pricing" style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(0,179,255,0.07)" x="80%" y="20%" />
+      <div style={{ position: 'relative', maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <Eyebrow>PRICING</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(28px, 4vw, 42px)',
+              fontSize: 'clamp(28px, 4vw, 46px)',
               fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
-              marginBottom: '12px',
+              color: T.text,
+              letterSpacing: '-0.03em',
+              marginBottom: 12,
             }}
           >
             Simple pricing
           </h2>
-          <p style={{ fontSize: '16px', color: L.textMuted }}>
+          <p style={{ fontSize: 16, fontWeight: 300, color: T.muted }}>
             Start free. Upgrade when your channels outgrow it.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-          {tiers.map((tier) => (
-            <div
-              key={tier.name}
-              style={{
-                background: L.bg,
-                border: `1px solid ${tier.featured ? L.accent : L.border}`,
-                borderRadius: '16px',
-                padding: '28px',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: tier.featured ? `0 0 40px rgba(0,196,154,0.12)` : '0 1px 4px rgba(0,0,0,0.04)',
-              }}
-            >
-              {tier.badge && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '-12px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    padding: '3px 12px',
-                    borderRadius: '999px',
-                    background: L.accent,
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {tier.badge}
-                </div>
-              )}
-
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: L.text, marginBottom: '4px' }}>{tier.name}</h3>
-                <p style={{ fontSize: '13px', color: L.textFaint, marginBottom: '14px' }}>{tier.desc}</p>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
-                  <span
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, alignItems: 'stretch' }}>
+          {tiers.map((tier) => {
+            const card = (
+              <div
+                key={`${tier.name}-card`}
+                style={{
+                  ...glass,
+                  background: tier.featured ? 'rgba(13,16,25,0.92)' : 'var(--glass)',
+                  border: tier.featured ? 'none' : '1px solid var(--border)',
+                  borderRadius: tier.featured ? 15 : 16,
+                  padding: 28,
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
+                {tier.badge && (
+                  <div
                     style={{
-                      fontSize: '34px',
-                      fontWeight: 800,
-                      color: L.text,
-                      fontFamily: L.mono,
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1,
+                      position: 'absolute',
+                      top: -13,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      padding: '4px 14px',
+                      borderRadius: 999,
+                      background: T.gradient,
+                      color: T.inverse,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      boxShadow: 'var(--shadow-accent)',
                     }}
                   >
-                    {tier.price}
-                  </span>
-                  {tier.price !== 'Free' && (
-                    <span style={{ fontSize: '14px', color: L.textMuted, paddingBottom: '4px' }}>/mo</span>
-                  )}
-                </div>
-              </div>
+                    {tier.badge}
+                  </div>
+                )}
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, flex: 1, marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {tier.features.map((f) => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <Check
+                <div style={{ marginBottom: 20 }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 4 }}>{tier.name}</h3>
+                  <p style={{ fontSize: 13, color: T.faint, marginBottom: 14 }}>{tier.desc}</p>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+                    <span
+                      className={tier.featured ? 'gradient-text' : undefined}
                       style={{
-                        width: 14, height: 14, flexShrink: 0, marginTop: '2px',
-                        color: tier.featured ? L.accent : L.win,
+                        fontSize: 38,
+                        fontWeight: 800,
+                        color: tier.featured ? undefined : T.text,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1,
                       }}
-                    />
-                    <span style={{ fontSize: '14px', color: L.text }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
+                    >
+                      {tier.price}
+                    </span>
+                    {tier.price !== 'Free' && (
+                      <span style={{ fontSize: 14, color: T.muted, paddingBottom: 4 }}>/mo</span>
+                    )}
+                  </div>
+                </div>
 
-              <button
-                onClick={tier.action}
-                disabled={tier.disabled}
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {tier.features.map((f) => (
+                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Check style={{ width: 14, height: 14, flexShrink: 0, marginTop: 2, color: tier.featured ? T.accent : T.win }} />
+                      <span style={{ fontSize: 14, color: T.text }}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {tier.disabled ? (
+                  <button
+                    disabled
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 10,
+                      fontWeight: 600,
+                      fontSize: 14,
+                      cursor: 'default',
+                      border: '1px solid var(--border)',
+                      background: T.surface2,
+                      color: T.faint,
+                    }}
+                  >
+                    {tier.cta}
+                  </button>
+                ) : (
+                  <Link
+                    to="/register"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 10,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      border: 'none',
+                      background: T.gradient,
+                      color: T.inverse,
+                      boxShadow: 'var(--shadow-accent)',
+                      transition: 'transform 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                  >
+                    {tier.cta}
+                  </Link>
+                )}
+              </div>
+            )
+
+            // Pro gets a gradient border wrapper + soft glow
+            return tier.featured ? (
+              <div
+                key={tier.name}
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: tier.disabled ? 'default' : 'pointer',
-                  border: tier.featured ? 'none' : `1px solid ${L.border}`,
-                  background: tier.disabled ? L.surface2 : tier.featured ? L.accent : L.accent,
-                  color: tier.disabled ? L.textFaint : '#ffffff',
-                  transition: 'opacity 0.15s',
+                  padding: 1,
+                  borderRadius: 16,
+                  background: T.gradient,
+                  boxShadow: '0 0 48px rgba(0,229,179,0.14)',
                 }}
-                onMouseEnter={e => { if (!tier.disabled) e.currentTarget.style.opacity = '0.85' }}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
-                {tier.cta}
-              </button>
-            </div>
-          ))}
+                {card}
+              </div>
+            ) : (
+              <div key={tier.name}>{card}</div>
+            )
+          })}
         </div>
       </div>
     </section>
@@ -1169,40 +1340,68 @@ const FAQ_ITEMS = [
   },
 ]
 
+function GradientChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 16 16" fill="none"
+      style={{
+        flexShrink: 0,
+        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        transition: 'transform 0.25s var(--ease)',
+      }}
+    >
+      <defs>
+        <linearGradient id="twChevGrad" x1="0" y1="0" x2="16" y2="16">
+          <stop offset="0%" stopColor="#00e5b3" />
+          <stop offset="100%" stopColor="#00b3ff" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M3 6 L8 11 L13 6"
+        stroke={open ? 'url(#twChevGrad)' : 'var(--text-faint)'}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  )
+}
+
 function Faq() {
   const [openIdx, setOpenIdx] = useState<number | null>(0)
 
   return (
-    <section id="faq" style={{ background: L.bg, padding: '96px 0' }}>
-      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: L.accent, letterSpacing: '0.08em', marginBottom: '10px' }}>
-            FAQ
-          </p>
+    <section id="faq" style={{ position: 'relative', padding: '104px 0' }}>
+      <SectionGlow color="rgba(129,140,248,0.06)" x="50%" y="0%" />
+      <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <Eyebrow>FAQ</Eyebrow>
           <h2
             style={{
-              fontSize: 'clamp(28px, 3.5vw, 40px)',
+              fontSize: 'clamp(28px, 3.6vw, 44px)',
               fontWeight: 800,
-              color: L.text,
-              letterSpacing: '-0.025em',
+              color: T.text,
+              letterSpacing: '-0.03em',
             }}
           >
             Questions, answered
           </h2>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {FAQ_ITEMS.map((item, i) => {
             const open = openIdx === i
             return (
               <div
                 key={i}
                 style={{
-                  background: L.surface,
-                  border: `1px solid ${open ? L.accentBorder : L.border}`,
-                  borderRadius: '12px',
+                  ...glass,
+                  borderColor: open ? 'rgba(0,229,179,0.30)' : 'var(--border)',
+                  borderRadius: 14,
                   overflow: 'hidden',
-                  transition: 'border-color 0.2s ease',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  boxShadow: open ? '0 0 28px rgba(0,229,179,0.07)' : 'none',
                 }}
               >
                 <button
@@ -1212,7 +1411,7 @@ function Faq() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '16px',
+                    gap: 16,
                     padding: '18px 20px',
                     background: 'none',
                     border: 'none',
@@ -1220,19 +1419,12 @@ function Faq() {
                     textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: '15px', fontWeight: 600, color: L.text }}>{item.q}</span>
-                  <ChevronDown
-                    style={{
-                      width: 16, height: 16, flexShrink: 0,
-                      color: open ? L.accent : L.textFaint,
-                      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s ease',
-                    }}
-                  />
+                  <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>{item.q}</span>
+                  <GradientChevron open={open} />
                 </button>
                 {open && (
                   <div style={{ padding: '0 20px 18px' }}>
-                    <p style={{ fontSize: '14px', color: L.textMuted, lineHeight: 1.7, margin: 0 }}>{item.a}</p>
+                    <p style={{ fontSize: 14, fontWeight: 300, color: T.muted, lineHeight: 1.7, margin: 0 }}>{item.a}</p>
                   </div>
                 )}
               </div>
@@ -1247,52 +1439,58 @@ function Faq() {
 // ── Final CTA ─────────────────────────────────────────────────────────────────
 
 function FinalCta() {
-  const navigate = useNavigate()
-
   return (
-    <section
-      style={{
-        background: `linear-gradient(135deg, #00b890 0%, #00c49a 40%, #00d4aa 100%)`,
-        padding: '96px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <h2
+    <section style={{ padding: '24px 24px 104px' }}>
+      <div
+        className="gradient-drift"
         style={{
-          fontSize: 'clamp(28px, 4vw, 44px)',
-          fontWeight: 800,
-          color: '#ffffff',
-          letterSpacing: '-0.025em',
-          marginBottom: '14px',
+          maxWidth: 1100,
+          margin: '0 auto',
+          borderRadius: 24,
+          padding: '88px 32px',
+          textAlign: 'center',
+          background: 'linear-gradient(120deg, #00e5b3 0%, #00b3ff 45%, #818cf8 80%, #00e5b3 100%)',
+          boxShadow: '0 24px 80px rgba(0,179,255,0.22)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        Your channels, on autopilot
-      </h2>
-      <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginBottom: '36px' }}>
-        Connect your channels, build a rule, and let Tapwire do the posting. Free plan, no card.
-      </p>
-      <button
-        onClick={() => navigate('/register')}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '14px 32px',
-          borderRadius: '10px',
-          background: '#ffffff',
-          color: L.text,
-          fontWeight: 700,
-          fontSize: '15px',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-          transition: 'all 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.18)' }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)' }}
-      >
-        Get started free <ArrowRight style={{ width: 16, height: 16 }} />
-      </button>
+        <h2
+          style={{
+            fontSize: 'clamp(30px, 4.4vw, 52px)',
+            fontWeight: 800,
+            color: T.inverse,
+            letterSpacing: '-0.03em',
+            marginBottom: 14,
+          }}
+        >
+          Your channels, on autopilot
+        </h2>
+        <p style={{ fontSize: 16, color: 'rgba(5,6,8,0.72)', marginBottom: 36, fontWeight: 500 }}>
+          Connect your channels, build a rule, and let Tapwire do the posting. Free plan, no card.
+        </p>
+        <Link
+          to="/register"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '15px 34px',
+            borderRadius: 12,
+            background: T.bg,
+            color: T.text,
+            fontWeight: 700,
+            fontSize: 15,
+            textDecoration: 'none',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
+            transition: 'transform 0.15s, box-shadow 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(0,0,0,0.45)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.35)' }}
+        >
+          Get started free <ArrowRight style={{ width: 16, height: 16 }} />
+        </Link>
+      </div>
     </section>
   )
 }
@@ -1301,53 +1499,41 @@ function FinalCta() {
 
 function Footer() {
   return (
-    <footer
-      style={{
-        background: L.surface,
-        borderTop: `1px solid ${L.border}`,
-      }}
-    >
+    <footer style={{ borderTop: '1px solid var(--divider)' }}>
       <div
         style={{
-          maxWidth: '1100px',
+          maxWidth: 1100,
           margin: '0 auto',
           padding: '40px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '24px',
+          gap: 24,
         }}
       >
-        {/* Logo + tagline */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="13" stroke={L.accent} strokeWidth="1.5" />
-            <circle cx="16" cy="16" r="7" stroke={L.accent} strokeWidth="1" opacity="0.4" />
-            <circle cx="16" cy="16" r="2.5" fill={L.accent} />
-          </svg>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: L.text }}>Tapwire</div>
-            <div style={{ fontSize: '11px', color: L.textFaint }}>Telegram channel automation</div>
-          </div>
+        {/* Wordmark + tagline */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Wordmark size={14} />
+          <span style={{ fontSize: 11, color: T.faint }}>Telegram channel automation</span>
         </div>
 
         {/* Links */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
           {['Privacy', 'Terms', 'Contact', 'Docs'].map((l) => (
             <a
               key={l}
               href="#"
-              style={{ fontSize: '13px', color: L.textMuted, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = L.text)}
-              onMouseLeave={e => (e.currentTarget.style.color = L.textMuted)}
+              style={{ fontSize: 13, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = T.text)}
+              onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
             >
               {l}
             </a>
           ))}
         </div>
 
-        <div style={{ fontSize: '12px', color: L.textFaint }}>© 2026 Tapwire</div>
+        <div style={{ fontSize: 12, color: T.faint }}>© 2026 Tapwire</div>
       </div>
     </footer>
   )
@@ -1357,7 +1543,7 @@ function Footer() {
 
 export default function Landing() {
   return (
-    <div style={{ background: L.bg, color: L.text, overflowX: 'hidden' }}>
+    <div style={{ background: T.bg, color: T.text, overflowX: 'hidden', fontFamily: 'var(--font-ui)' }}>
       <Nav />
       <Hero />
       <HowItWorks />

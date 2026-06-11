@@ -17,7 +17,7 @@ export function AppShell({ children, connected = false }: AppShellProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -38,7 +38,7 @@ export function AppShell({ children, connected = false }: AppShellProps) {
         <div className="flex items-center">
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="absolute z-10 left-0 top-14 -translate-y-1/2 hidden lg:flex items-center justify-center w-5 h-8 bg-[var(--surface-2)] border border-[var(--border)] rounded-r-md text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            className="absolute z-10 left-0 top-14 -translate-y-1/2 hidden lg:flex items-center justify-center w-5 h-8 bg-[var(--surface-2)] border border-[var(--border)] rounded-r-md text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--border-strong)] transition-colors"
             style={{ marginLeft: collapsed ? '64px' : '240px', transition: 'margin 300ms' }}
           >
             {collapsed ? <PanelLeftOpen className="w-3 h-3" /> : <PanelLeftClose className="w-3 h-3" />}

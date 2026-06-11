@@ -83,7 +83,7 @@ function ToastContainer({
             key={t.id}
             className={clsx(
               'flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border',
-              'bg-[var(--surface)] shadow-[var(--shadow-lg)] pointer-events-auto',
+              'bg-[var(--glass)] backdrop-blur-[14px] shadow-[var(--shadow-lg)] pointer-events-auto',
               'min-w-[280px] max-w-[400px]',
               config.style
             )}

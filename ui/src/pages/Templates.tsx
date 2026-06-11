@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { clsx } from 'clsx'
 import { FileText, Plus, Trash2, Pencil, Film, Upload } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { Modal } from '../components/ui/Modal'
@@ -114,7 +115,7 @@ export default function Templates() {
 
   return (
     <AppShell>
-      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto page-enter">
         <div className="flex items-center justify-between mb-6">
           <p className="text-[var(--text-muted)]" style={{ fontSize: 'var(--text-sm)' }}>
             Saved messages you can send with one click or attach to automations
@@ -140,8 +141,7 @@ export default function Templates() {
             {templates.map((t) => (
               <div
                 key={t.id}
-                className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5 flex flex-col gap-3 hover:border-[var(--border-strong)] transition-colors"
-                style={{ background: 'var(--surface)' }}
+                className="glass card-lift rounded-[var(--radius-lg)] p-5 flex flex-col gap-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="font-medium text-[var(--text)] truncate">{t.name}</div>
@@ -164,8 +164,14 @@ export default function Templates() {
                   </div>
                 </div>
                 <div
-                  className="rounded-[var(--radius-md)] px-4 py-3 whitespace-pre-wrap break-words flex-1"
-                  style={{ background: 'var(--bg)', fontSize: 'var(--text-sm)', color: 'var(--text)' }}
+                  className="px-4 py-3 whitespace-pre-wrap break-words flex-1"
+                  style={{
+                    background: 'var(--surface-2)',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text)',
+                    borderLeft: '2px solid var(--accent)',
+                    borderRadius: '4px var(--radius-lg) var(--radius-lg) var(--radius-lg)',
+                  }}
                 >
                   {t.body || <span style={{ color: 'var(--text-faint)' }}>(media only)</span>}
                 </div>
@@ -203,8 +209,12 @@ export default function Templates() {
                   <button
                     key={v}
                     onClick={() => insertVar(v)}
-                    className="px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors"
-                    style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}
+                    className="px-2.5 py-1 rounded-full border border-[var(--border)] text-[var(--accent)] hover:border-[var(--border-strong)] transition-colors"
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      fontFamily: 'var(--font-mono)',
+                      background: 'var(--accent-gradient-soft)',
+                    }}
                   >
                     {`{${v}}`}
                   </button>
@@ -250,7 +260,10 @@ export default function Templates() {
                       key={m.id}
                       onClick={() =>
                         setEditing({ ...editing, media_id: editing.media_id === m.id ? null : m.id, media_url: null })}
-                      className="flex-shrink-0 rounded-[var(--radius-md)] overflow-hidden border-2 transition-colors"
+                      className={clsx(
+                        'flex-shrink-0 rounded-[var(--radius-md)] overflow-hidden border transition-all duration-200',
+                        editing.media_id === m.id && 'glow-ring'
+                      )}
                       style={{
                         borderColor: editing.media_id === m.id ? 'var(--accent)' : 'var(--border)',
                         width: 72, height: 72,
@@ -271,12 +284,26 @@ export default function Templates() {
             {/* Live preview */}
             {editing.body && (
               <div>
-                <div className="text-[var(--text-muted)] mb-1" style={{ fontSize: 'var(--text-xs)' }}>
-                  Preview with sample values
+                <div className="flex items-baseline gap-2 mb-1.5">
+                  <span
+                    className="uppercase tracking-widest font-semibold text-[var(--accent)]"
+                    style={{ fontSize: '10px' }}
+                  >
+                    Preview
+                  </span>
+                  <span className="text-[var(--text-faint)]" style={{ fontSize: 'var(--text-xs)' }}>
+                    with sample values
+                  </span>
                 </div>
                 <div
-                  className="rounded-[var(--radius-md)] px-4 py-3 whitespace-pre-wrap border border-[var(--border)]"
-                  style={{ background: 'var(--accent-dim)', fontSize: 'var(--text-sm)', color: 'var(--text)' }}
+                  className="px-4 py-3 whitespace-pre-wrap border border-[var(--border)]"
+                  style={{
+                    background: 'var(--surface-2)',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text)',
+                    borderLeft: '2px solid var(--accent)',
+                    borderRadius: '4px var(--radius-lg) var(--radius-lg) var(--radius-lg)',
+                  }}
                 >
                   {renderPreview(editing.body)}
                 </div>

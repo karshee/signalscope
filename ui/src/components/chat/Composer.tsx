@@ -89,10 +89,19 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
   }
 
   return (
-    <div className="flex-shrink-0 border-t border-[var(--border)] px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+    <div className="glass flex-shrink-0 border-t border-[var(--border)] px-3 py-2.5">
       {/* Template quick-send chips */}
       {templates.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-1">
+        <div
+          className="flex gap-1.5 overflow-x-auto pb-2 mb-1"
+          style={{
+            // Subtle fade masks at the scroll edges
+            WebkitMaskImage:
+              'linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)',
+            maskImage:
+              'linear-gradient(90deg, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)',
+          }}
+        >
           {templates.map((t) => {
             const busy = sendingTemplateId === t.id
             return (
@@ -102,11 +111,11 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
                 disabled={sendingTemplateId !== null}
                 title={t.body}
                 className={clsx(
-                  'flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full border transition-colors',
-                  'border-[var(--border)] text-[var(--accent)] hover:bg-[var(--accent-dim)]',
-                  sendingTemplateId !== null && 'opacity-50 cursor-not-allowed'
+                  'flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[var(--border)] text-[var(--accent)] font-medium',
+                  'transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-[0_4px_14px_rgba(0,229,179,0.18)]',
+                  sendingTemplateId !== null && 'opacity-50 cursor-not-allowed hover:translate-y-0'
                 )}
-                style={{ fontSize: 'var(--text-xs)', background: 'var(--surface-2)' }}
+                style={{ fontSize: 'var(--text-xs)', background: 'var(--accent-gradient-soft)' }}
               >
                 {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                 {t.name}
@@ -137,10 +146,13 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
           disabled={media.length === 0}
           title={media.length === 0 ? 'No media in library' : 'Send a GIF'}
           className={clsx(
-            'p-2 rounded-[var(--radius-md)] border border-[var(--border)] transition-colors flex-shrink-0',
-            gifOpen ? 'text-[var(--accent)] bg-[var(--accent-dim)]' : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]',
+            'p-2 rounded-full border transition-colors flex-shrink-0',
+            gifOpen
+              ? 'glow-ring text-[var(--accent)] border-[var(--border-strong)]'
+              : 'border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]',
             media.length === 0 && 'opacity-40 cursor-not-allowed'
           )}
+          style={{ background: gifOpen ? 'var(--accent-gradient-soft)' : 'var(--surface-2)' }}
         >
           <Film className="w-4 h-4" />
         </button>
@@ -148,16 +160,13 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
         {gifOpen && (
           <>
             <div className="fixed inset-0 z-30" onClick={() => setGifOpen(false)} />
-            <div
-              className="absolute bottom-full left-0 mb-2 z-40 w-72 max-h-64 overflow-y-auto p-2 rounded-[var(--radius-lg)] border border-[var(--border-strong)] shadow-[var(--shadow-lg)]"
-              style={{ background: 'var(--surface-2)' }}
-            >
+            <div className="glass absolute bottom-full left-0 mb-2 z-40 w-72 max-h-64 overflow-y-auto p-2 rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] msg-enter">
               <div className="grid grid-cols-3 gap-2">
                 {media.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => sendMedia(m)}
-                    className="rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] hover:border-[var(--accent)] transition-colors aspect-square"
+                    className="rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-[0_0_0_1px_rgba(0,229,179,0.35),0_0_24px_rgba(0,229,179,0.22)] transition-all duration-150 aspect-square"
                     title={m.filename}
                   >
                     {m.mime?.startsWith('video') ? (
@@ -178,8 +187,12 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
           onKeyDown={(e) => e.key === 'Enter' && sendText()}
           placeholder="Write a message…"
           disabled={sending}
-          className="flex-1 min-w-0 px-3 py-2 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
-          style={{ fontSize: 'var(--text-sm)' }}
+          className={clsx(
+            'flex-1 min-w-0 px-4 py-2 rounded-[var(--radius-full)] border border-[var(--border)] text-[var(--text)] outline-none',
+            'transition-all duration-150 placeholder:text-[var(--text-faint)]',
+            'focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_rgba(0,229,179,0.25),0_0_20px_rgba(0,229,179,0.12)]'
+          )}
+          style={{ fontSize: 'var(--text-sm)', background: 'var(--surface-2)' }}
         />
 
         <button
@@ -187,11 +200,16 @@ export function Composer({ channelId, templates, media, onSent }: ComposerProps)
           disabled={sending || !text.trim()}
           title="Send"
           className={clsx(
-            'p-2 rounded-[var(--radius-md)] transition-colors flex-shrink-0',
+            'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 flex-shrink-0',
             text.trim() && !sending
-              ? 'text-[var(--text-inverse)] bg-[var(--accent)] hover:bg-[var(--accent-hover)]'
-              : 'text-[var(--text-faint)] bg-[var(--surface-2)] cursor-not-allowed'
+              ? 'text-[var(--text-inverse)] hover:scale-105'
+              : 'text-[var(--text-faint)] cursor-not-allowed'
           )}
+          style={
+            text.trim() && !sending
+              ? { background: 'var(--accent-gradient)', boxShadow: 'var(--shadow-accent)' }
+              : { background: 'var(--surface-2)', border: '1px solid var(--border)' }
+          }
         >
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>

@@ -73,7 +73,7 @@ export default function Register() {
   return (
     <AuthLayout>
       <h2
-        className="font-bold text-[var(--text)] mb-1"
+        className="font-bold text-[var(--text)] mb-1 tracking-tight"
         style={{ fontSize: 'var(--text-xl)' }}
       >
         Create account
@@ -115,7 +115,7 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              className="w-full px-3 py-2.5 pr-10 rounded-[var(--radius-md)] border text-[var(--text)] placeholder-[var(--text-faint)] outline-none transition-all bg-[var(--surface-2)] border-[var(--border)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-dim)]"
+              className="w-full px-3 py-2.5 pr-10 rounded-[var(--radius-md)] border text-[var(--text)] placeholder-[var(--text-faint)] outline-none transition-all duration-200 bg-[var(--surface-2)] border-[var(--border)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-dim)] focus:shadow-[0_0_20px_rgba(0,229,179,0.15)]"
               style={{ fontSize: 'var(--text-base)' }}
             />
             <button

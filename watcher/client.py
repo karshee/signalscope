@@ -43,6 +43,12 @@ class TapwireClient:
                     return False
                 me = await self._client.get_me()
                 logger.info(f"Connected as {me.first_name} (@{getattr(me, 'username', None)})")
+                # Prime the entity cache: bare -100… ids only resolve for entities the
+                # session has seen, and private channels have no username fallback.
+                try:
+                    await self._client.get_dialogs(limit=200)
+                except Exception as e:
+                    logger.warning(f"Dialog sync failed (private channels may not resolve): {e}")
                 self._connected = True
                 return True
             except Exception as e:

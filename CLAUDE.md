@@ -30,3 +30,15 @@ python3 -m pytest
 - Prod: docker-compose.prod.yml (multi-stage build, nginx :80 with WS upgrade); infra/ has AWS Terraform (defined, NOT deployed)
 
 Docs: docs/architecture.md, docs/rule-engine.md, docs/setup-telegram.md, docs/webhooks.md
+
+## Shipping changes
+
+Use the `/ship-pr` skill to commit, branch, and open a PR against `main` — never commit
+directly to it. `karshee` reviews.
+
+## No CI/CD pipeline
+
+There is no `.github/workflows/` in this repo — no automated tests, build, or deploy on
+push or PR. What runs on this box (`:8000` API+SPA, `:3000` dev frontend) is started by
+hand under the `signalscope` systemd unit. `infra/` holds Terraform for an AWS deployment
+that is defined but not applied.
